@@ -2,7 +2,6 @@ package com.mykyda.websocketdemo.service;
 
 import com.mykyda.websocketdemo.database.entity.Chat;
 import com.mykyda.websocketdemo.database.repository.ChatRepository;
-import com.mykyda.websocketdemo.security.database.repository.UserRepository;
 import com.mykyda.websocketdemo.security.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +41,16 @@ public class ChatService {
         } else {
             log.info("Chat found with ids {} {}", user1.getId(), user2Id);
             return new ResponseEntity<>(chat.getId(), HttpStatus.OK);
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<Chat> getById(Long id) {
+        var chat = chatRepository.findById(id).orElse(null);
+        if (chat == null) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        } else {
+            return new ResponseEntity<>(chat, HttpStatus.OK);
         }
     }
 
