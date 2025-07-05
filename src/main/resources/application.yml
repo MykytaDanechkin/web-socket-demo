@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: WebSocketDemo
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    password: ${DB_PASSWORD}
+    username: ${DB_USERNAME}
+    url: ${DB_URL}
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  config:
+    import: file:.env[.properties]
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
