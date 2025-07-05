@@ -10,6 +10,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
@@ -29,5 +31,10 @@ public class UserService implements UserDetailsService {
     @Transactional
     public User save(User userToSave) {
         return userRepository.save(userToSave);
+    }
+
+    @Transactional
+    public List<User> getAll(){
+        return userRepository.findAll();
     }
 }

@@ -1,59 +1,59 @@
-const stompClient = new StompJs.Client({
-    brokerURL: 'ws://localhost:8080/gs-guide-websocket'
-});
-
-stompClient.onConnect = (frame) => {
-    setConnected(true);
-    console.log('Connected: ' + frame);
-    stompClient.subscribe('/topic/greetings', (greeting) => {
-        showGreeting(JSON.parse(greeting.body).content);
-    });
-};
-
-stompClient.onWebSocketError = (error) => {
-    console.error('Error with websocket', error);
-};
-
-stompClient.onStompError = (frame) => {
-    console.error('Broker reported error: ' + frame.headers['message']);
-    console.error('Additional details: ' + frame.body);
-};
-
-function setConnected(connected) {
-    $("#connect").prop("disabled", connected);
-    $("#disconnect").prop("disabled", !connected);
-    if (connected) {
-        $("#conversation").show();
-    } else {
-        $("#conversation").hide();
-    }
-    $("#greetings").html("");
-}
-
-function connect() {
-    stompClient.activate();
-}
-
-function disconnect() {
-    stompClient.deactivate();
-    setConnected(false);
-    console.log("Disconnected");
-}
-
-function sendName() {
-    stompClient.publish({
-        destination: "/app/hello",
-        body: JSON.stringify({ content: $("#content").val() })
-    });
-}
-
-function showGreeting(message) {
-    $("#greetings").append("<tr><td>" + message + "</td></tr>");
-}
+let stompClient = null;
+let currentSubscription = null;
+let currentChatId = null;
+// let currentUserId = null;
 
 $(function () {
-    $("form").on('submit', (e) => e.preventDefault());
-    $("#connect").click(() => connect());
-    $("#disconnect").click(() => disconnect());
-    $("#send").click(() => sendName());
+    $(".user-btn").click(function () {
+        const targetUserId = $(this).data("user-id");
+        $.post("/api/check-chat", {
+            userId: targetUserId,
+            // userId2: targetUserId
+        }, function (chatId) {
+            connectToChat(chatId);
+        });
+    });
+
+    $("#sendBtn").click(() => sendMessage());
+    $("#msgInput").keypress((e) => {
+        if (e.which === 13) sendMessage();
+    });
+
+    //currentUserId = $("meta[name='user-id']").attr("content");
 });
+
+function connectToChat(chatId) {
+    if (currentSubscription) currentSubscription.unsubscribe();
+    if (!stompClient || !stompClient.connected) {
+        stompClient = new StompJs.Client({
+            webSocketFactory: () => new SockJS('/ws'),
+            onConnect: () => subscribeToChat(chatId)
+        });
+        stompClient.activate();
+    } else {
+        subscribeToChat(chatId);
+    }
+}
+
+function subscribeToChat(chatId) {
+    currentChatId = chatId;
+    $("#messages").empty();
+    currentSubscription = stompClient.subscribe(`/topic/chat/${chatId}`, (msg) => {
+        const message = JSON.parse(msg.body);
+        showMessage(message.content);
+    });
+}
+
+function sendMessage() {
+    const text = $("#msgInput").val();
+    if (!text.trim() || !currentChatId) return;
+    stompClient.publish({
+        destination: `/app/i`,
+        body: JSON.stringify({content: text, chatId: currentChatId})
+    });
+    $("#msgInput").val("");
+}
+
+function showMessage(text) {
+    $("#messages").append(`<div>${text}</div>`);
+}
