@@ -1,5 +1,6 @@
 package com.mykyda.websocketdemo.database.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +24,8 @@ public class HistoryEntry {
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    private Chat chatId;
+    @JsonIgnore
+    private Chat chat;
 
     private String sendersEmail;
 

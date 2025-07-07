@@ -13,14 +13,35 @@
         #container { display: flex; height: 100vh; }
         #users { width: 30%; background: #f2f2f2; padding: 10px; overflow-y: auto; border-right: 1px solid #ccc; }
         #chat { width: 70%; padding: 20px; display: flex; flex-direction: column; }
-        #messages { flex-grow: 1; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; overflow-y: auto; background: #fafafa; display: flex; flex-direction: column; }
-        .user-btn { background: white; border: 1px solid #ccc; padding: 10px; margin-bottom: 5px; cursor: pointer; }
+
+        .greeting {
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 18px;
+            padding: 5px 0;
+        }
+
+        .user-btn {
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+
         .user-btn:hover { background: #e0e0e0; }
         .user-btn.active { background: #d3e5ff; font-weight: bold; }
 
-        #inputRow { display: flex; }
-        #inputRow input { flex-grow: 1; padding: 8px; }
-        #inputRow button { padding: 8px; }
+        #messages {
+            flex-grow: 1;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            overflow-y: auto;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+        }
 
         .message {
             max-width: 60%;
@@ -28,37 +49,36 @@
             padding: 10px;
             border-radius: 10px;
             word-wrap: break-word;
+            color: white;
         }
 
-        .self {
+        .right {
             align-self: flex-end;
-            background-color: #d6b4fc;
+            background-color: #a855f7;
             text-align: right;
         }
 
-        .other {
+        .left {
             align-self: flex-start;
-            background-color: #e6e6e6;
+            background-color: #333;
             text-align: left;
         }
 
-        .meta {
-            font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 4px;
+        #inputRow {
+            display: flex;
         }
 
-        .time {
-            font-weight: normal;
-            color: #777;
-            margin-right: 6px;
+        #inputRow input {
+            flex-grow: 1;
+            padding: 8px;
         }
 
-        .greeting {
+        #inputRow button {
+            padding: 8px;
+        }
+
+        #loadHistoryBtn {
             margin-bottom: 10px;
-            font-weight: bold;
-            font-size: 18px;
-            padding: 5px 0;
         }
     </style>
 </head>
@@ -74,6 +94,7 @@
         </div>
     </div>
     <div id="chat">
+        <button id="loadHistoryBtn" style="display: none;">Завантажити історію</button>
         <div id="messages"></div>
         <div id="inputRow">
             <input type="text" id="msgInput" placeholder="Type a message...">
