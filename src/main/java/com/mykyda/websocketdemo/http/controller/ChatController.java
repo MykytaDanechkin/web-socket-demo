@@ -35,8 +35,8 @@ public class ChatController {
     //TODO validate
     @MessageMapping("/i")
     public void chatting(MessageDTO messageDTO, Principal principal) {
+        var message = historyEntryService.save(messageDTO, principal);
         log.info("Received message: {} from {} at chat {}", messageDTO.getContent(), principal.getName() , messageDTO.getChatId());
-        historyEntryService.save(messageDTO, principal);
-        messagingTemplate.convertAndSend("/topic/chat/" + messageDTO.getChatId(), messageDTO);
+        messagingTemplate.convertAndSend("/topic/chat/" + messageDTO.getChatId(), message.getBody());
     }
 }

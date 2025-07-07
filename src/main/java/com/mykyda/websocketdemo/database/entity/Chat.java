@@ -28,11 +28,11 @@ public class Chat {
     private Long user2Id;
 
     public static Chat of(Long userId1, Long userId2) {
-        var a = Math.min(userId1, userId2);
-        var b = Math.max(userId1, userId2);
+        var firstId = Math.min(userId1, userId2);
+        var lastId = Math.max(userId1, userId2);
         return Chat.builder()
-                .user1Id(a)
-                .user2Id(b)
+                .user1Id(firstId)
+                .user2Id(lastId)
                 .build();
     }
 }

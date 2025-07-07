@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Messenger</title>
+    <meta name="userEmail" th:content="${userEmail}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
@@ -12,18 +13,61 @@
         #container { display: flex; height: 100vh; }
         #users { width: 30%; background: #f2f2f2; padding: 10px; overflow-y: auto; border-right: 1px solid #ccc; }
         #chat { width: 70%; padding: 20px; display: flex; flex-direction: column; }
-        #messages { flex-grow: 1; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; overflow-y: auto; background: #fafafa; }
+        #messages { flex-grow: 1; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; overflow-y: auto; background: #fafafa; display: flex; flex-direction: column; }
         .user-btn { background: white; border: 1px solid #ccc; padding: 10px; margin-bottom: 5px; cursor: pointer; }
         .user-btn:hover { background: #e0e0e0; }
+        .user-btn.active { background: #d3e5ff; font-weight: bold; }
+
         #inputRow { display: flex; }
         #inputRow input { flex-grow: 1; padding: 8px; }
         #inputRow button { padding: 8px; }
+
+        .message {
+            max-width: 60%;
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 10px;
+            word-wrap: break-word;
+        }
+
+        .self {
+            align-self: flex-end;
+            background-color: #d6b4fc;
+            text-align: right;
+        }
+
+        .other {
+            align-self: flex-start;
+            background-color: #e6e6e6;
+            text-align: left;
+        }
+
+        .meta {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .time {
+            font-weight: normal;
+            color: #777;
+            margin-right: 6px;
+        }
+
+        .greeting {
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 18px;
+            padding: 5px 0;
+        }
     </style>
 </head>
 <body>
 <div id="container">
     <div id="users">
+        <div class="greeting" th:text="'Hello, ' + ${userEmail} + '!'"></div>
         <div th:each="user : ${users}"
+             th:if="${user.email} != ${userEmail}"
              class="user-btn"
              th:data-user-id="${user.id}"
              th:text="${user.email}">

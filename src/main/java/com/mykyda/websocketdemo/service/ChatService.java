@@ -20,15 +20,13 @@ public class ChatService {
     private final ChatRepository chatRepository;
 
     private final UserService userService;
-
-
-    //todo rename
+    
     @Transactional
     public ResponseEntity<Long> getChat(Principal principal, Long user2Id) {
         var user1 = userService.findByEmail(principal.getName());
-        var a = Math.min(user1.getId(), user2Id);
-        var b = Math.max(user1.getId(), user2Id);
-        var chat = chatRepository.findByUser1IdAndUser2Id(a, b).orElse(null);
+        var firstId = Math.min(user1.getId(), user2Id);
+        var lastId = Math.max(user1.getId(), user2Id);
+        var chat = chatRepository.findByUser1IdAndUser2Id(firstId, lastId).orElse(null);
         if (chat == null) {
             log.warn("Chat not found with ids {} {}", user1.getId(), user2Id);
             var newChat = createChat(user1.getId(), user2Id);
