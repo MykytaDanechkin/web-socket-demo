@@ -14,13 +14,15 @@ import java.sql.Timestamp;
 @Setter
 public class HistoryEntryDto {
 
+    Long id;
+
     String content;
 
     String sendersEmail;
 
     Timestamp timestamp;
 
-    public static HistoryEntryDto entryToDto(HistoryEntry entity) {
-        return new HistoryEntryDto(entity.getContent(), entity.getSendersEmail(), entity.getTimestamp());
+    public static HistoryEntryDto of(HistoryEntry historyEntry) {
+        return (historyEntry == null) ? null : new HistoryEntryDto(historyEntry.getId(), historyEntry.getContent(), historyEntry.getSendersEmail(), historyEntry.getTimestamp());
     }
 }

@@ -1,4 +1,4 @@
-package com.mykyda.websocketdemo.database.entity;
+package com.mykyda.websocketdemo.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,4 +12,6 @@ public class MessageDTO {
     private Long chatId;
 
     private String content;
+
+    private String getterEmail;
 }

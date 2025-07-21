@@ -1,5 +1,7 @@
 package com.mykyda.websocketdemo.database.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.mykyda.websocketdemo.security.database.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,18 +23,28 @@ public class Chat {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user1_id")
-    private Long user1Id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
+    private User user1;
 
-    @Column(name = "user2_id")
-    private Long user2Id;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
+    private User user2;
 
-    public static Chat of(Long userId1, Long userId2) {
-        var firstId = Math.min(userId1, userId2);
-        var lastId = Math.max(userId1, userId2);
-        return Chat.builder()
-                .user1Id(firstId)
-                .user2Id(lastId)
-                .build();
+    public static Chat of(User user1, User user2) {
+        if (user1.getId() == Math.min(user1.getId(), user2.getId())) {
+            return Chat.builder()
+                    .user1(user1)
+                    .user2(user2)
+                    .build();
+        } else {
+            return Chat.builder()
+                    .user1(user2)
+                    .user2(user1)
+                    .build();
+        }
     }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private HistoryEntry lastMessage;
 }

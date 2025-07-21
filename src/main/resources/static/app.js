@@ -1,25 +1,29 @@
 let stompClient = null;
 let currentSubscription = null;
 let currentChatId = null;
+let targetEmail = null;
 
 $(function () {
     $(document).on("click", ".user-btn", function () {
         const $this = $(this);
-        const targetUserId = $this.data("user-id");
+        const chatId = $this.data("chat-id");
+        targetEmail = $this.data("user-email");
 
         if ($this.hasClass("active")) {
             $this.removeClass("active");
+            $this.find(".last-message").css("display", "block");
             disconnectFromChat();
             return;
         }
 
-        $(".user-btn").removeClass("active");
-        $this.addClass("active");
+        $(".user-btn").removeClass("active").find(".last-message").css("display", "block");
 
-        $.post("/api/chat/check-chat", { userId: targetUserId }, function (chatId) {
-            connectToChat(chatId);
-        });
+        $this.addClass("active");
+        $this.find(".last-message").css("display", "none");
+
+        connectToChat(chatId);
     });
+
 
     $("#sendBtn").click(sendMessage);
     $("#msgInput").keypress(e => {
@@ -31,7 +35,6 @@ function connectToChat(chatId) {
     if (currentSubscription) currentSubscription.unsubscribe();
     currentChatId = chatId;
     $("#messages").empty();
-
 
     const connectCallback = () => {
         subscribeToChat(chatId);
@@ -48,7 +51,6 @@ function connectToChat(chatId) {
         connectCallback();
     }
 }
-
 
 function disconnectFromChat() {
     if (currentSubscription) {
@@ -72,7 +74,7 @@ function sendMessage() {
 
     stompClient.publish({
         destination: "/app/i",
-        body: JSON.stringify({ content: text, chatId: currentChatId })
+        body: JSON.stringify({ content: text, chatId: currentChatId, getterEmail: targetEmail })
     });
     $("#msgInput").val("");
 }
@@ -84,7 +86,7 @@ function showMessage(msg) {
 
 function showMessageAtBottom(msg) {
     const html = renderMessageHtml(msg);
-    $("#messages").append(html);``
+    $("#messages").append(html);
 }
 
 function renderMessageHtml(msg) {

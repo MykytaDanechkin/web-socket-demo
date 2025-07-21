@@ -31,4 +31,19 @@ public class HistoryEntry {
 
     @Builder.Default
     private Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private MessageStatus status = MessageStatus.UNSEEN;
+
+    @Override
+    public String toString() {
+        return "HistoryEntry{" +
+                "id=" + id +
+                ", content='" + content + '\'' +
+                ", sendersEmail='" + sendersEmail + '\'' +
+                ", timestamp=" + timestamp +
+                ", status=" + status +
+                '}';
+    }
 }

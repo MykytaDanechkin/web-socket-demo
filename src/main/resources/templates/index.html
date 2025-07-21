@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
     <script src="/app.js"></script>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css"/>
 </head>
 <header class="app-header">
     <div class="left-side">
@@ -31,11 +31,20 @@
 <div id="container">
     <div id="users">
         <div class="greeting" th:text="'Hello, ' + ${userEmail} + '!'"></div>
-        <div th:each="user : ${users}"
-             th:if="${user.email} != ${userEmail}"
+        <div th:each="chat : ${chats}"
+             th:if="${chat.user1.id} != ${userId} or ${chat.user2.id} != ${userId}"
              class="user-btn"
-             th:data-user-id="${user.id}"
-             th:text="${user.email}">
+             th:data-chat-id="${chat.id}"
+             th:data-user-email="${chat.user1.id == userId} ? ${chat.user2.email} : ${chat.user1.email}">
+
+            <div class="chat-email"
+                 th:text="${chat.user1.id == userId} ? ${chat.user2.email} : ${chat.user1.email}">User Email
+            </div>
+
+            <div class="last-message" th:if="${chat.lastMessage} != null">
+                <div class="last-sender" th:text="${chat.lastMessage?.sendersEmail}"></div>
+                <div class="last-content" th:text="${chat.lastMessage?.content}"></div>
+            </div>
         </div>
     </div>
     <div id="chat">
