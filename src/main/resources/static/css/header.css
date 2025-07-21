@@ -1,0 +1,29 @@
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2a2546;
+    padding: 15px 30px;
+    color: #ddd;
+    box-shadow: 0 2px 10px var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.app-header .logo {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--accent);
+    user-select: none;
+}
+
+.app-header .center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.app-header form {
+    margin: 0;
+}

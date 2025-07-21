@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Objects;
 
 @Controller
 @RequestMapping("/api/chat")
@@ -54,16 +56,22 @@ public class ChatController {
 
     //TODO validate
     @MessageMapping("/i")
+    @SendToUser
     public void chatting(MessageDTO messageDTO, Principal principal) {
         var message = historyEntryService.save(messageDTO, principal).getBody();
         if (message != null) {
+
             log.info("Received message: {} from {} at chat {}", messageDTO.getContent(), principal.getName(), messageDTO.getChatId());
-            System.out.println(messageDTO.getGetterEmail());
-            messagingTemplate.convertAndSend("/topic/chat/" + messageDTO.getChatId(), message);
+
             var chat = chatService.getById(messageDTO.getChatId()).getBody();
             chat.setLastMessage(entityManager.getReference(HistoryEntry.class, message.getId()));
             chatService.update(chat);
-            //messagingTemplate.convertAndSendToUser(principal.getName(), "/queue/inbox", message);
+
+            messagingTemplate.convertAndSend("/topic/chat/" + messageDTO.getChatId(), HistoryEntryDto.of(message));
+            messagingTemplate.convertAndSendToUser(Objects.equals(principal.getName(),
+                    chat.getUser1().getEmail()) ? chat.getUser2().getEmail() : chat.getUser1().getEmail(),
+                    "/queue/inbox",
+                    HistoryEntryDto.of(message));
         }
     }
 }

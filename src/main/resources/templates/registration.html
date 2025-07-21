@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8" />
     <title>Registration</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
+<body>
 <header class="app-header">
     <div class="left-side">
         <span class="logo">ChatApp</span>
@@ -22,7 +23,6 @@
         </form>
     </div>
 </header>
-<body>
 <div class="page-center">
     <form action="/auth/registration" method="post" class="auth-form">
         <label for="email">Email:

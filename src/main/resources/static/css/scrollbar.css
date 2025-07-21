@@ -1,0 +1,19 @@
+#messages::-webkit-scrollbar {
+    width: 8px;
+    background-color: transparent;
+}
+
+#messages::-webkit-scrollbar-thumb {
+    background: rgba(110, 84, 240, 0.4);
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+#messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(110, 84, 240, 0.7);
+}
+
+#messages {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(110, 84, 240, 0.4) transparent;
+}

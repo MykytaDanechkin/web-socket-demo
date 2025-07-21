@@ -1,10 +1,8 @@
 package com.mykyda.websocketdemo.service;
 
-import com.mykyda.websocketdemo.database.entity.Chat;
 import com.mykyda.websocketdemo.database.entity.HistoryEntry;
 import com.mykyda.websocketdemo.database.repository.ChatRepository;
 import com.mykyda.websocketdemo.dto.ChatDTO;
-import com.mykyda.websocketdemo.security.database.entity.User;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -67,15 +65,12 @@ public class ChatService {
 //        }
 //    }
 
+    @Transactional
     public void update(ChatDTO chatDTO) {
-        chatRepository.save(Chat.builder()
-                .id(chatDTO.getId())
-                .user1(entityManager.getReference(User.class, chatDTO.getUser1().getId()))
-                .user2(entityManager.getReference(User.class, chatDTO.getUser2().getId()))
-                .lastMessage(entityManager.getReference(HistoryEntry.class, chatDTO.getLastMessage().getId()))
-                .build());
+        chatRepository.updateLastMessage(chatDTO.getId(),entityManager.getReference(HistoryEntry.class, chatDTO.getLastMessage().getId()));
     }
 
+    @Transactional
     public List<ChatDTO> getAllForUserId(Long userId) {
         return chatRepository.findAllByUser1IdOrUser2Id(userId, userId).stream().map(ChatDTO::of).toList();
     }

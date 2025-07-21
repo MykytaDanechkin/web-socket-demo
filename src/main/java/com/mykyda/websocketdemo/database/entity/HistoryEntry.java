@@ -44,6 +44,7 @@ public class HistoryEntry {
                 ", sendersEmail='" + sendersEmail + '\'' +
                 ", timestamp=" + timestamp +
                 ", status=" + status +
+                ", chatId=" + chat.getId() +
                 '}';
     }
 }

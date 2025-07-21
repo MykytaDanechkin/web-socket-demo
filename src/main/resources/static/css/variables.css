@@ -1,0 +1,26 @@
+:root {
+    --bg-dark: #1e1e2f;
+    --bg-light: #252136;
+    --primary: #7c65ff;
+    --primary-light: #9b85ff;
+    --accent: #cbbcff;
+    --error: #7f1d1d;
+    --error-light: #ffb3b3;
+    --shadow: #6e54f050;
+    --box-shadow: 0 0 10px #6e54f0aa;
+    --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100dvh;
+    font-family: var(--font-main);
+    background-color: var(--bg-dark);
+    color: #ddd;
+    overflow: hidden;
+}

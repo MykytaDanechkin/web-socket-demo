@@ -4,6 +4,7 @@ let currentChatId = null;
 let targetEmail = null;
 
 $(function () {
+    initializeInboxConnection();
     $(document).on("click", ".user-btn", function () {
         const $this = $(this);
         const chatId = $this.data("chat-id");
@@ -30,6 +31,53 @@ $(function () {
         if (e.which === 13) sendMessage();
     });
 });
+
+function initializeInboxConnection() {
+    const connectCallback = () => {
+        subscribeToInbox();
+    };
+
+    if (!stompClient || !stompClient.connected) {
+        stompClient = new StompJs.Client({
+            webSocketFactory: () => new SockJS('/ws'),
+            onConnect: connectCallback,
+        });
+        stompClient.activate();
+    } else {
+        connectCallback();
+    }
+}
+
+function subscribeToInbox() {
+    console.log("Subscribing to /user/queue/inbox...");
+    stompClient.subscribe(`/user/queue/inbox`, (msg) => {
+        console.log("Inbox message received", msg);
+        const message = JSON.parse(msg.body);
+        updateLastMessageInChatPreview(message);
+    });
+}
+function updateLastMessageInChatPreview(message) {
+    const chatDiv = $(`.user-btn[data-chat-id="${message.chatId}"]`);
+    if (chatDiv.length) {
+        console.log(`Updating chat preview for chatId=${message.chatId}, status=${message.status}`);
+        console.log("ChatDiv found:", chatDiv.length > 0);
+
+        chatDiv.find(".last-message .last-sender").text(message.sendersEmail);
+        chatDiv.find(".last-message .last-content").text(message.content);
+
+        const isUnseen = message.status === "UNSEEN";
+
+        if (isUnseen) {
+            chatDiv.addClass("unseen");
+        } else {
+            chatDiv.removeClass("unseen");
+        }
+
+        if (!chatDiv.hasClass("active")) {
+            chatDiv.find(".last-message").css("display", "block");
+        }
+    }
+}
 
 function connectToChat(chatId) {
     if (currentSubscription) currentSubscription.unsubscribe();
@@ -65,6 +113,8 @@ function subscribeToChat(chatId) {
     currentSubscription = stompClient.subscribe(`/topic/chat/${chatId}`, (msg) => {
         const message = JSON.parse(msg.body);
         showMessageAtBottom(message);
+        updateLastMessageInChatPreview(message);
+        scrollToBottom();
     });
 }
 
