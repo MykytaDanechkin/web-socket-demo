@@ -21,35 +21,34 @@ $(function () {
         });
     });
 
-
-    $("#sendBtn").click(() => sendMessage());
-    $("#msgInput").keypress((e) => {
+    $("#sendBtn").click(sendMessage);
+    $("#msgInput").keypress(e => {
         if (e.which === 13) sendMessage();
     });
-
-    $("#loadHistoryBtn").click(() => loadFullHistory());
 });
 
 function connectToChat(chatId) {
     if (currentSubscription) currentSubscription.unsubscribe();
     currentChatId = chatId;
     $("#messages").empty();
-    $("#loadHistoryBtn").show();
+
+
+    const connectCallback = () => {
+        subscribeToChat(chatId);
+        loadInitialHistory();
+    };
 
     if (!stompClient || !stompClient.connected) {
         stompClient = new StompJs.Client({
             webSocketFactory: () => new SockJS('/ws'),
-            onConnect: () => {
-                subscribeToChat(chatId);
-                loadInitialHistory();
-            }
+            onConnect: connectCallback,
         });
         stompClient.activate();
     } else {
-        subscribeToChat(chatId);
-        loadInitialHistory();
+        connectCallback();
     }
 }
+
 
 function disconnectFromChat() {
     if (currentSubscription) {
@@ -58,71 +57,53 @@ function disconnectFromChat() {
     }
     currentChatId = null;
     $("#messages").empty();
-    $("#loadHistoryBtn").hide();
 }
-
 
 function subscribeToChat(chatId) {
     currentSubscription = stompClient.subscribe(`/topic/chat/${chatId}`, (msg) => {
         const message = JSON.parse(msg.body);
-        showMessage(message);
+        showMessageAtBottom(message);
     });
 }
 
 function sendMessage() {
-    const text = $("#msgInput").val();
-    if (!text.trim() || !currentChatId) return;
+    const text = $("#msgInput").val().trim();
+    if (!text || !currentChatId) return;
+
     stompClient.publish({
-        destination: `/app/i`,
+        destination: "/app/i",
         body: JSON.stringify({ content: text, chatId: currentChatId })
     });
     $("#msgInput").val("");
 }
 
 function showMessage(msg) {
-    const currentUserEmail = $("meta[name='userEmail']").attr("content");
-    const isOwnMessage = msg.sendersEmail === currentUserEmail;
-    const sideClass = isOwnMessage ? 'right' : 'left';
-    const timestamp = formatTime(msg.timestamp);
-    const html = `
-        <div class="message ${sideClass}">
-            <div><strong>${timestamp} ${msg.sendersEmail}</strong></div>
-            <div>${msg.content}</div>
-        </div>
-    `;
-    $("#messages").append(html);
-    $("#messages").scrollTop($("#messages")[0].scrollHeight);
+    const html = renderMessageHtml(msg);
+    $("#messages").prepend(html);
 }
 
-function showMessageAtTop(msg) {
+function showMessageAtBottom(msg) {
+    const html = renderMessageHtml(msg);
+    $("#messages").append(html);``
+}
+
+function renderMessageHtml(msg) {
     const currentUserEmail = $("meta[name='userEmail']").attr("content");
     const isOwnMessage = msg.sendersEmail === currentUserEmail;
     const sideClass = isOwnMessage ? 'right' : 'left';
     const timestamp = formatTime(msg.timestamp);
-    const html = `
+    return `
         <div class="message ${sideClass}">
             <div><strong>${timestamp} ${msg.sendersEmail}</strong></div>
             <div>${msg.content}</div>
         </div>
     `;
-    $("#messages").prepend(html);
 }
 
 function loadInitialHistory() {
     $.get(`/api/chat/get-history?chatId=${currentChatId}`, function (data) {
-        const messages = data.content || data;
-        messages.forEach(showMessageAtTop);
-        $("#messages").scrollTop($("#messages")[0].scrollHeight);
-    });
-}
-
-
-function loadFullHistory() {
-    $.get(`/api/chat/get-full-history?chatId=${currentChatId}`, function (data) {
-        $("#messages").empty();
-        const messages = data.content || data;
-        messages.forEach(showMessageAtTop);
-        $("#messages").scrollTop($("#messages")[0].scrollHeight);
+        (data.content || data).forEach(showMessage);
+        scrollToBottom();
     });
 }
 
@@ -131,4 +112,8 @@ function formatTime(timestamp) {
     const hours = String(date.getHours()).padStart(2, '0');
     const mins = String(date.getMinutes()).padStart(2, '0');
     return `${hours}:${mins}`;
+}
+
+function scrollToBottom() {
+    $("#messages").scrollTop($("#messages")[0].scrollHeight);
 }

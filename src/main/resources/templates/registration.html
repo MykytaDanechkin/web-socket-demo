@@ -1,23 +1,41 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Registration</title>
+    <link rel="stylesheet" href="/styles.css" />
 </head>
+<header class="app-header">
+    <div class="left-side">
+        <span class="logo">ChatApp</span>
+    </div>
+
+    <div class="center">
+        <a th:if="${isAuthenticated}" href="/" class="home-btn">Home</a>
+    </div>
+
+    <div class="right-side">
+        <a th:if="${!isAuthenticated}" href="/auth/login" class="auth-btn">Login</a>
+
+        <form th:if="${isAuthenticated}" action="/auth/logout" method="post">
+            <button type="submit" class="auth-btn">Logout</button>
+        </form>
+    </div>
+</header>
 <body>
-<form th:action="@{/auth/registration}" method="post">
-    <label for="email">Email:
-        <input id="email" type="email" name="email">
-    </label>
-    <br>
-    <label for="password">Password:
-        <input id="password" type="password" name="password">
-    </label>
-    <br>
-    <button type="submit">Register</button>
-</form>
-<div th:if="${errors}">
-    <p style="color: red" th:each="error : ${errors}" th:text="${error}">Error message</p>
+<div class="page-center">
+    <form action="/auth/registration" method="post" class="auth-form">
+        <label for="email">Email:
+            <input id="email" type="email" name="email" required />
+        </label>
+        <label for="password">Password:
+            <input id="password" type="password" name="password" required minlength="8" />
+        </label>
+        <div class="error-messages" th:if="${errors}">
+            <p th:each="error : ${errors}" th:text="${error}"></p>
+        </div>
+        <button type="submit">Register</button>
+    </form>
 </div>
 </body>
 </html>

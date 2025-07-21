@@ -1,0 +1,329 @@
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2a2546;
+    padding: 15px 30px;
+    color: #ddd;
+    box-shadow: 0 2px 10px #6e54f050;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.app-header .logo {
+    font-weight: 700;
+    font-size: 18px;
+    color: #cbbcff;
+    user-select: none;
+}
+
+.app-header .center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.home-btn {
+    color: #cbbcff;
+    background: none;
+    border: none;
+    font-weight: 600;
+    font-size: 16px;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.home-btn:hover {
+    color: #ffffff;
+    text-shadow: 0 0 5px #a68eff;
+}
+
+.auth-btn {
+    background: #7c65ff;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 8px 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.auth-btn:hover {
+    background-color: #9b85ff;
+    box-shadow: 0 0 10px #d1b9ff;
+}
+
+.app-header form {
+    margin: 0;
+}
+
+/* ================= BASE ================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100dvh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1e1e2f;
+    color: #ddd;
+    overflow: hidden;
+}
+
+
+/* ================= FORM PAGES (LOGIN / REG) ================= */
+.page-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.auth-form {
+    background: #252136;
+    padding: 32px 40px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 0 25px #6e54f0aa;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.auth-form label {
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+    font-size: 14px;
+    color: #cbbcff;
+}
+
+.auth-form input {
+    margin-top: 8px;
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: none;
+    background: #3b355f;
+    color: #ddd;
+    font-size: 16px;
+    outline: none;
+    box-shadow: inset 0 0 8px #6e54f0aa;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.auth-form input:focus {
+    background-color: #5a4ecf;
+    box-shadow: 0 0 15px #a68effcc;
+    color: white;
+}
+
+.auth-form button,
+.auth-form .btn-register {
+    padding: 12px 0;
+    border-radius: 25px;
+    border: none;
+    background: #7c65ff;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 0 15px #bdaeffcc;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    text-align: center;
+    text-decoration: none;
+}
+
+.auth-form button:hover,
+.auth-form .btn-register:hover {
+    background-color: #9b85ff;
+    box-shadow: 0 0 20px #d1b9ff;
+}
+
+.error-messages p {
+    margin: 0;
+    padding: 10px 12px;
+    background-color: #7f1d1d;
+    color: #ffb3b3;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 0 8px #ff8a8aaa;
+}
+
+/* ================= CHAT PAGE ================= */
+#container {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+}
+
+
+#users {
+    width: 30%;
+    background: #2a2546;
+    padding: 20px;
+    overflow-y: auto;
+    border-right: 2px solid #6e54f0;
+    box-shadow: inset -5px 0 8px -6px #6e54f0aa;
+}
+
+#greeting {
+    font-weight: 600;
+    font-size: 20px;
+    color: #cbbcff;
+    margin-bottom: 20px;
+}
+
+.user-btn {
+    background: #3b355f;
+    border: none;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    color: #cbbcff;
+    cursor: pointer;
+    font-weight: 500;
+    width: 100%;
+    text-align: left;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.user-btn:hover {
+    background-color: #5a4ecf;
+    box-shadow: 0 0 10px #a68eff;
+}
+
+.user-btn.active {
+    background-color: #7c65ff;
+    color: white;
+    font-weight: 700;
+    box-shadow: 0 0 15px #a68eff;
+}
+
+#chat {
+    width: 70%;
+    display: flex;
+    flex-direction: column;
+    background: #252136;
+    padding: 25px 30px;
+    box-shadow: inset 0 0 20px #4b3cc4;
+}
+
+.load-history-btn {
+    align-self: center;
+    margin-bottom: 10px;
+    padding: 8px 18px;
+    border-radius: 25px;
+    border: none;
+    background: #6e54f0;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 0 8px #9d86ff;
+    z-index: 1;
+}
+
+
+#messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: calc(100dvh - 150px);
+    background: #1a1833;
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: inset 0 0 10px #6e54f0aa;
+    scroll-behavior: smooth;
+}
+
+.message {
+    max-width: 65%;
+    padding: 14px 18px;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.4;
+    box-shadow: 0 0 6px #5c4ddf50;
+    word-wrap: break-word;
+}
+
+#messages::-webkit-scrollbar {
+    width: 8px;
+    background-color: transparent;
+}
+
+#messages::-webkit-scrollbar-thumb {
+    background: rgba(110, 84, 240, 0.4);
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+#messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(110, 84, 240, 0.7);
+}
+
+#messages {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(110, 84, 240, 0.4) transparent;
+}
+
+
+.right {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+    color: #f0e6ff;
+    text-align: right;
+}
+
+.left {
+    align-self: flex-start;
+    background: linear-gradient(135deg, #3c3b6e, #1f1e42);
+    color: #c3c1e1;
+    text-align: left;
+}
+
+.message > div:first-child {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 5px;
+    color: #d6cfffcc;
+}
+
+#inputRow {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+#inputRow input {
+    flex-grow: 1;
+    padding: 12px 15px;
+    border-radius: 25px;
+    border: none;
+    background: #3b355f;
+    color: #ddd;
+    font-size: 16px;
+    outline: none;
+    box-shadow: inset 0 0 8px #6e54f0aa;
+}
+
+#inputRow button {
+    padding: 12px 25px;
+    border-radius: 25px;
+    border: none;
+    background: #7c65ff;
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 0 15px #bdaeffcc;
+}
