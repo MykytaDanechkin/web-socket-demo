@@ -2,6 +2,7 @@ package com.mykyda.websocketdemo.dto;
 
 import com.mykyda.websocketdemo.database.entity.Chat;
 import com.mykyda.websocketdemo.database.entity.HistoryEntry;
+import com.mykyda.websocketdemo.security.dto.UserDTO;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -16,13 +17,13 @@ public class ChatDTO {
 
     Long id;
 
-    UserDto user1;
+    UserDTO user1;
 
-    UserDto user2;
+    UserDTO user2;
 
     HistoryEntry lastMessage;
 
     public static ChatDTO of(Chat chat) {
-        return new ChatDTO(chat.getId(), UserDto.of(chat.getUser1()), UserDto.of(chat.getUser2()), chat.getLastMessage());
+        return new ChatDTO(chat.getId(), UserDTO.of(chat.getUser1()), UserDTO.of(chat.getUser2()), chat.getLastMessage());
     }
 }

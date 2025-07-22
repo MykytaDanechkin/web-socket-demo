@@ -32,7 +32,7 @@ public class AuthService {
 
     @Transactional
     public ResponseEntity<Cookie> login(LoginDto loginDto) {
-        var user = userService.findByEmail(loginDto.getEmail());
+        var user = userService.getByEmail(loginDto.getEmail());
         if (user != null) {
             try {
                 authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword()));
@@ -50,7 +50,7 @@ public class AuthService {
 
     @Transactional
     public ResponseEntity<String> register(RegistrationDto rd) {
-        if (userService.findByEmail(rd.getEmail()) == null) {
+        if (userService.getByEmail(rd.getEmail()) == null) {
             var user = User.builder()
                     .email(rd.getEmail())
                     .password(passwordEncoder.encode(rd.getPassword()))

@@ -1,6 +1,7 @@
 package com.mykyda.websocketdemo.security.service;
 
 
+import com.mykyda.websocketdemo.security.dto.UserDTO;
 import com.mykyda.websocketdemo.security.database.entity.User;
 import com.mykyda.websocketdemo.security.database.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -11,6 +12,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +26,7 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
-    public User findByEmail(String email) {
+    public User getByEmail(String email) {
         return userRepository.findByEmail(email).orElse(null);
     }
 
@@ -36,5 +38,10 @@ public class UserService implements UserDetailsService {
     @Transactional
     public List<User> getAll(){
         return userRepository.findAll();
+    }
+
+    @Transactional
+    public List<UserDTO> getAllContainsEmail (String email, String usersEmail) {
+        return userRepository.findByEmailContains(email).stream().map(UserDTO::of).filter(u-> !Objects.equals(u.getEmail(), usersEmail)).toList();
     }
 }

@@ -30,7 +30,7 @@ public class GlobalModelAdvice {
 
     @ModelAttribute("userId")
     public Long userId(Authentication authentication) {
-        return (authentication != null) ? userService.findByEmail(authentication.getName()).getId() : null;
+        return (authentication != null) ? userService.getByEmail(authentication.getName()).getId() : null;
     }
 
     @ModelAttribute("chats")

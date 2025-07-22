@@ -1,9 +1,7 @@
 package com.mykyda.websocketdemo.http.controller;
 
 import com.mykyda.websocketdemo.database.entity.HistoryEntry;
-import com.mykyda.websocketdemo.dto.HistoryEntryDto;
-import com.mykyda.websocketdemo.dto.MarkSeenRequest;
-import com.mykyda.websocketdemo.dto.MessageDTO;
+import com.mykyda.websocketdemo.dto.*;
 import com.mykyda.websocketdemo.service.ChatService;
 import com.mykyda.websocketdemo.service.HistoryEntryService;
 import jakarta.persistence.EntityManager;
@@ -33,11 +31,6 @@ public class ChatController {
 
     private final EntityManager entityManager;
 
-//    @PostMapping("/check-chat")
-//    public ResponseEntity<Long> checkChat(Principal principal, @RequestParam("userId") Long user2Id) {
-//        return chatService.getChatId(principal, user2Id);
-//    }
-
     //todo handle
     @GetMapping("/get-history")
     public ResponseEntity<List<HistoryEntryDto>> getLatestHistory(@RequestParam("chatId") Long chatId) {
@@ -52,6 +45,23 @@ public class ChatController {
 //        log.info("full history acquired for chat {}", chatId);
 //        return ResponseEntity.ok(messages);
 //    }
+
+    //TODO handle
+    @PostMapping("/create")
+    public ResponseEntity<ChatDTO> createChat(@RequestBody ChatCreateDTO chatCreateDTO) {
+        return ResponseEntity.ok(chatService.createChat(chatCreateDTO.getCurrentUserId(),chatCreateDTO.getTargetUserId()));
+    }
+
+    //TODO handle
+    @PostMapping("/mark-seen")
+    public ResponseEntity markSeen(@RequestBody MarkSeenRequest markSeenRequest) {
+        System.out.println(markSeenRequest.getMessageIds());
+        historyEntryService.markAsSeen(markSeenRequest.getMessageIds());
+        log.info("mark seen at ids {}", markSeenRequest.getMessageIds());
+        messagingTemplate.convertAndSend("/topic/chat/" + markSeenRequest.getChatId(), markSeenRequest.getMessageIds());
+        return ResponseEntity.ok().build();
+    }
+
 
     //TODO validate, optimize
     @MessageMapping("/i")
@@ -73,13 +83,5 @@ public class ChatController {
         }
     }
 
-    //TODO handle
-    @PostMapping("/mark-seen")
-    public ResponseEntity markSeen(@RequestBody MarkSeenRequest markSeenRequest) {
-        System.out.println(markSeenRequest.getMessageIds());
-        historyEntryService.markAsSeen(markSeenRequest.getMessageIds());
-        log.info("mark seen at ids {}", markSeenRequest.getMessageIds());
-        messagingTemplate.convertAndSend("/topic/chat/" + markSeenRequest.getChatId(), markSeenRequest.getMessageIds());
-        return ResponseEntity.ok().build();
-    }
+
 }

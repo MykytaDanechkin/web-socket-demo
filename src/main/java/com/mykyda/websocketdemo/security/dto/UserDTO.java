@@ -1,4 +1,4 @@
-package com.mykyda.websocketdemo.dto;
+package com.mykyda.websocketdemo.security.dto;
 
 import com.mykyda.websocketdemo.security.database.entity.User;
 import lombok.Getter;
@@ -10,13 +10,13 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants
 @Getter
 @Setter
-public class UserDto {
+public class UserDTO {
 
     Long id;
 
     String email;
 
-    public static UserDto of(User user) {
-        return new UserDto(user.getId(), user.getEmail());
+    public static UserDTO of(User user) {
+        return new UserDTO(user.getId(), user.getEmail());
     }
 }

@@ -9,14 +9,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface ChatRepository extends JpaRepository<Chat, Long> {
 
-    Optional<Chat> findByUser1IdAndUser2Id(Long user1Id, Long user2Id);
-
-    List<Chat> findAllByUser1IdOrUser2Id(Long user1Id, Long user2Id);
+    List<Chat> findAllByUser1IdOrUser2IdOrderByLastMessageTimestampDesc(Long user1Id, Long user2Id);
 
     @Modifying
     @Query("UPDATE Chat c SET c.lastMessage = :lastMessage WHERE c.id = :chatId")

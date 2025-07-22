@@ -30,6 +30,67 @@ $(function () {
     $("#msgInput").keypress(e => {
         if (e.which === 13) sendMessage();
     });
+    $("#globalUserSearch").on("input", function () {
+        const query = $(this).val().trim();
+        const currentEmail = $("meta[name='userEmail']").attr("content");
+
+        if (query.length < 4) {
+            $("#globalUserResults").empty();
+            return;
+        }
+
+        $.get(`/api/user/find?email=${encodeURIComponent(query)}`, function (users) {
+            const html = users
+                .filter(user => user.email !== currentEmail)
+                .map(user => `<div class="search-user" data-user-id="${user.id}" data-user-email="${user.email}">${user.email}</div>`)
+                .join("");
+
+            $("#globalUserResults").html(html);
+        });
+    });
+
+    $(document).on("click", ".search-user", function () {
+        const targetId = $(this).data("user-id");
+        const targetEmailVal = $(this).data("user-email");
+        const currentUserId = $("meta[name='userId']").attr("content");
+
+        let existingChat = null;
+
+        $(".user-btn").each(function () {
+            const thisEmail = $(this).data("user-email");
+            if (thisEmail === targetEmailVal) {
+                existingChat = $(this);
+                return false;
+            }
+        });
+
+        if (existingChat) {
+            existingChat.trigger("click");
+        } else {
+            $.ajax({
+                url: `/api/chat/create`,
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ currentUserId: currentUserId, targetUserId: targetId }),
+                success: function (newChat) {
+                    const chatHtml = `
+                    <div class="user-btn unseen" data-chat-id="${newChat.id}" data-user-email="${targetEmailVal}" data-last-timestamp="0">
+                        <div class="chat-email">${targetEmailVal}</div>
+                        <div class="last-message" style="display: none;">
+                            <div class="last-sender"></div>
+                            <div class="last-content"></div>
+                        </div>
+                    </div>
+                `;
+                    $("#chatList").prepend(chatHtml);
+                    $(`.user-btn[data-chat-id="${newChat.id}"]`).trigger("click");
+                }
+            });
+        }
+
+        $("#globalUserSearch").val("");
+        $("#globalUserResults").empty();
+    });
 });
 
 function initializeInboxConnection() {
@@ -65,6 +126,7 @@ function updateLastMessageInChatPreview(message) {
 
     chatDiv.find(".last-message .last-sender").text(message.sendersEmail);
     chatDiv.find(".last-message .last-content").text(message.content);
+    chatDiv.attr("data-last-timestamp", message.timestamp);
 
     if (isUnseen && !isOwnMessage) {
         chatDiv.addClass("unseen");
@@ -75,7 +137,10 @@ function updateLastMessageInChatPreview(message) {
     if (!chatDiv.hasClass("active")) {
         chatDiv.find(".last-message").css("display", "block");
     }
+
+    moveChatToTop(chatDiv);
 }
+
 
 
 function connectToChat(chatId) {
@@ -233,6 +298,30 @@ function observeSeenMessages() {
         observer.observe(this);
     });
 }
+
+function moveChatToTop(chatDiv) {
+    const timestamp = Number(chatDiv.attr("data-last-timestamp") || 0);
+    const $chatList = $("#chatList");
+
+    chatDiv.detach();
+
+    const $chats = $chatList.children(".user-btn");
+
+    let inserted = false;
+    $chats.each(function () {
+        const otherTs = Number($(this).attr("data-last-timestamp") || 0);
+        if (timestamp >= otherTs) {
+            $(this).before(chatDiv);
+            inserted = true;
+            return false;
+        }
+    });
+
+    if (!inserted) {
+        $chatList.prepend(chatDiv);
+    }
+}
+
 
 function scrollToFirstUnseen() {
     const $firstUnseen = $(".message").filter(function () {
