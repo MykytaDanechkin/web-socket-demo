@@ -31,8 +31,9 @@
 <div id="container">
     <div id="users">
         <div class="greeting" th:text="'Hello, ' + ${userEmail} + '!'"></div>
+
         <div th:each="chat : ${chats}"
-             th:classappend="${chat.lastMessage.status.name() == 'UNSEEN'} ? 'unseen' : ''"
+             th:classappend="${chat.lastMessage != null and chat.lastMessage.status.name() == 'UNSEEN' and chat.lastMessage.sendersEmail != userEmail} ? 'unseen' : ''"
              class="user-btn"
              th:data-chat-id="${chat.id}"
              th:data-user-email="${chat.user1.id == userId} ? ${chat.user2.email} : ${chat.user1.email}">
@@ -42,8 +43,8 @@
             </div>
 
             <div class="last-message" th:if="${chat.lastMessage} != null">
-                <div class="last-sender" th:text="${chat.lastMessage?.sendersEmail}"></div>
-                <div class="last-content" th:text="${chat.lastMessage?.content}"></div>
+                <div class="last-sender" th:text="${chat.lastMessage.sendersEmail}"></div>
+                <div class="last-content" th:text="${chat.lastMessage.content}"></div>
             </div>
         </div>
     </div>

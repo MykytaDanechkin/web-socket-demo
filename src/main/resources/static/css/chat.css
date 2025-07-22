@@ -69,6 +69,14 @@
     color: #aaa;
 }
 
+.last-message, .last-content {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+}
+
 .last-sender {
     font-weight: 500;
     color: var(--accent);
@@ -122,6 +130,12 @@
     font-size: 13px;
     margin-bottom: 5px;
     color: #d6cfffcc;
+}
+
+.status-label {
+    font-weight: bold;
+    margin-left: 10px;
+    color: #eb8ffa;
 }
 
 #inputRow {

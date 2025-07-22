@@ -2,6 +2,7 @@ package com.mykyda.websocketdemo.http.controller;
 
 import com.mykyda.websocketdemo.database.entity.HistoryEntry;
 import com.mykyda.websocketdemo.dto.HistoryEntryDto;
+import com.mykyda.websocketdemo.dto.MarkSeenRequest;
 import com.mykyda.websocketdemo.dto.MessageDTO;
 import com.mykyda.websocketdemo.service.ChatService;
 import com.mykyda.websocketdemo.service.HistoryEntryService;
@@ -11,11 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
@@ -40,6 +38,7 @@ public class ChatController {
 //        return chatService.getChatId(principal, user2Id);
 //    }
 
+    //todo handle
     @GetMapping("/get-history")
     public ResponseEntity<List<HistoryEntryDto>> getLatestHistory(@RequestParam("chatId") Long chatId) {
         var messages = historyEntryService.getLatestHistory(chatId);
@@ -47,16 +46,15 @@ public class ChatController {
         return ResponseEntity.ok(messages);
     }
 
-    @GetMapping("/get-full-history")
-    public ResponseEntity<List<HistoryEntryDto>> getFullHistory(@RequestParam("chatId") Long chatId) {
-        var messages = historyEntryService.getFullHistory(chatId);
-        log.info("full history acquired for chat {}", chatId);
-        return ResponseEntity.ok(messages);
-    }
+//    @GetMapping("/get-full-history")
+//    public ResponseEntity<List<HistoryEntryDto>> getFullHistory(@RequestParam("chatId") Long chatId) {
+//        var messages = historyEntryService.getFullHistory(chatId);
+//        log.info("full history acquired for chat {}", chatId);
+//        return ResponseEntity.ok(messages);
+//    }
 
-    //TODO validate
+    //TODO validate, optimize
     @MessageMapping("/i")
-    @SendToUser
     public void chatting(MessageDTO messageDTO, Principal principal) {
         var message = historyEntryService.save(messageDTO, principal).getBody();
         if (message != null) {
@@ -73,5 +71,15 @@ public class ChatController {
                     "/queue/inbox",
                     HistoryEntryDto.of(message));
         }
+    }
+
+    //TODO handle
+    @PostMapping("/mark-seen")
+    public ResponseEntity markSeen(@RequestBody MarkSeenRequest markSeenRequest) {
+        System.out.println(markSeenRequest.getMessageIds());
+        historyEntryService.markAsSeen(markSeenRequest.getMessageIds());
+        log.info("mark seen at ids {}", markSeenRequest.getMessageIds());
+        messagingTemplate.convertAndSend("/topic/chat/" + markSeenRequest.getChatId(), markSeenRequest.getMessageIds());
+        return ResponseEntity.ok().build();
     }
 }

@@ -5,6 +5,7 @@ let targetEmail = null;
 
 $(function () {
     initializeInboxConnection();
+
     $(document).on("click", ".user-btn", function () {
         const $this = $(this);
         const chatId = $this.data("chat-id");
@@ -24,7 +25,6 @@ $(function () {
 
         connectToChat(chatId);
     });
-
 
     $("#sendBtn").click(sendMessage);
     $("#msgInput").keypress(e => {
@@ -49,35 +49,34 @@ function initializeInboxConnection() {
 }
 
 function subscribeToInbox() {
-    console.log("Subscribing to /user/queue/inbox...");
     stompClient.subscribe(`/user/queue/inbox`, (msg) => {
-        console.log("Inbox message received", msg);
         const message = JSON.parse(msg.body);
         updateLastMessageInChatPreview(message);
     });
 }
+
 function updateLastMessageInChatPreview(message) {
     const chatDiv = $(`.user-btn[data-chat-id="${message.chatId}"]`);
-    if (chatDiv.length) {
-        console.log(`Updating chat preview for chatId=${message.chatId}, status=${message.status}`);
-        console.log("ChatDiv found:", chatDiv.length > 0);
+    if (!chatDiv.length) return;
 
-        chatDiv.find(".last-message .last-sender").text(message.sendersEmail);
-        chatDiv.find(".last-message .last-content").text(message.content);
+    const currentUserEmail = $("meta[name='userEmail']").attr("content");
+    const isUnseen = message.status === "UNSEEN";
+    const isOwnMessage = message.sendersEmail === currentUserEmail;
 
-        const isUnseen = message.status === "UNSEEN";
+    chatDiv.find(".last-message .last-sender").text(message.sendersEmail);
+    chatDiv.find(".last-message .last-content").text(message.content);
 
-        if (isUnseen) {
-            chatDiv.addClass("unseen");
-        } else {
-            chatDiv.removeClass("unseen");
-        }
+    if (isUnseen && !isOwnMessage) {
+        chatDiv.addClass("unseen");
+    } else {
+        chatDiv.removeClass("unseen");
+    }
 
-        if (!chatDiv.hasClass("active")) {
-            chatDiv.find(".last-message").css("display", "block");
-        }
+    if (!chatDiv.hasClass("active")) {
+        chatDiv.find(".last-message").css("display", "block");
     }
 }
+
 
 function connectToChat(chatId) {
     if (currentSubscription) currentSubscription.unsubscribe();
@@ -112,11 +111,29 @@ function disconnectFromChat() {
 function subscribeToChat(chatId) {
     currentSubscription = stompClient.subscribe(`/topic/chat/${chatId}`, (msg) => {
         const message = JSON.parse(msg.body);
+
+        if (Array.isArray(message)) {
+            message.forEach(id => {
+                const $msg = $(`.message[data-id='${id}']`);
+                $msg.data("seen", true);
+                if ($msg.data("own")) {
+                    $msg.find(".status-label").text("SEEN");
+                }
+            });
+            const chatDiv = $(`.user-btn[data-chat-id="${chatId}"]`);
+            if (chatDiv.length) {
+
+                chatDiv.removeClass("unseen");
+            }
+            return;
+        }
         showMessageAtBottom(message);
         updateLastMessageInChatPreview(message);
+        observeSeenMessages();
         scrollToBottom();
     });
 }
+
 
 function sendMessage() {
     const text = $("#msgInput").val().trim();
@@ -144,19 +161,90 @@ function renderMessageHtml(msg) {
     const isOwnMessage = msg.sendersEmail === currentUserEmail;
     const sideClass = isOwnMessage ? 'right' : 'left';
     const timestamp = formatTime(msg.timestamp);
+    const seen = msg.status === "SEEN";
+
     return `
-        <div class="message ${sideClass}">
-            <div><strong>${timestamp} ${msg.sendersEmail}</strong></div>
+        <div class="message ${sideClass}" 
+             data-id="${msg.id}" 
+             data-seen="${seen}" 
+             data-own="${isOwnMessage}">
+            <div>
+                <strong>${timestamp} ${msg.sendersEmail}</strong>
+                ${isOwnMessage ? `<span class="status-label">${msg.status}</span>` : ``}
+            </div>
             <div>${msg.content}</div>
         </div>
     `;
 }
 
+
 function loadInitialHistory() {
     $.get(`/api/chat/get-history?chatId=${currentChatId}`, function (data) {
         (data.content || data).forEach(showMessage);
-        scrollToBottom();
+        observeSeenMessages();
+        scrollToFirstUnseen();
     });
+}
+
+function markMessagesAsSeen(ids) {
+    if (!ids.length) return;
+
+    $.ajax({
+        url: "/api/chat/mark-seen",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ chatId: currentChatId, messageIds: ids }),
+        success: function () {
+            ids.forEach(id => {
+                const $msg = $(`.message[data-id='${id}']`);
+                $msg.data("seen", true);
+                if ($msg.data("own")) {
+                    $msg.find(".status-label").text("SEEN");
+                }
+            });
+        }
+    });
+}
+
+function observeSeenMessages() {
+    const observer = new IntersectionObserver((entries) => {
+        const seenMessageIds = [];
+
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const $msg = $(entry.target);
+                const messageId = $msg.data("id");
+                const isSeen = $msg.data("seen");
+                const isOwn = $msg.data("own");
+
+                if (!isSeen && !isOwn) {
+                    seenMessageIds.push(messageId);
+                    $msg.data("seen", true);
+                }
+            }
+        });
+
+        if (seenMessageIds.length > 0) {
+            markMessagesAsSeen(seenMessageIds);
+        }
+    }, { threshold: 1.0 });
+
+    $(".message").each(function () {
+        observer.observe(this);
+    });
+}
+
+function scrollToFirstUnseen() {
+    const $firstUnseen = $(".message").filter(function () {
+        const $this = $(this);
+        return !$this.data("seen") && !$this.data("own");
+    }).first();
+
+    if ($firstUnseen.length) {
+        $firstUnseen[0].scrollIntoView({ behavior: 'auto', block: 'center' });
+    } else {
+        scrollToBottom();
+    }
 }
 
 function formatTime(timestamp) {

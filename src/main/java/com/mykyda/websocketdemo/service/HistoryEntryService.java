@@ -2,10 +2,12 @@ package com.mykyda.websocketdemo.service;
 
 import com.mykyda.websocketdemo.database.entity.Chat;
 import com.mykyda.websocketdemo.database.entity.HistoryEntry;
+import com.mykyda.websocketdemo.database.entity.MessageStatus;
 import com.mykyda.websocketdemo.dto.MessageDTO;
 import com.mykyda.websocketdemo.database.repository.HistoryEntryRepository;
 import com.mykyda.websocketdemo.dto.HistoryEntryDto;
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +29,7 @@ public class HistoryEntryService {
 
     private final EntityManager entityManager;
 
+    @Transactional
     public ResponseEntity<HistoryEntry> save(MessageDTO messageDTO, Principal principal) {
         var chat = chatService.getById(messageDTO.getChatId()).getBody();
         if (chat == null) {
@@ -43,11 +46,20 @@ public class HistoryEntryService {
         }
     }
 
+    //TODO handle errors
+    @Transactional
     public List<HistoryEntryDto> getLatestHistory(Long chatId){
         return historyEntryRepository.findAllByChatIdOrderByTimestampDesc(chatId, PageRequest.of(0, 20)).map(HistoryEntryDto::of).toList();
     }
 
-    public List<HistoryEntryDto> getFullHistory(Long chatId){
-        return historyEntryRepository.findAllByChatIdOrderByTimestampDesc(chatId).stream().map(HistoryEntryDto::of).toList();
+//    @Transactional
+//    public List<HistoryEntryDto> getFullHistory(Long chatId){
+//        return historyEntryRepository.findAllByChatIdOrderByTimestampDesc(chatId).stream().map(HistoryEntryDto::of).toList();
+//    }
+
+    //TODO handle errors
+    @Transactional
+    public void markAsSeen(List<Long> messageIds) {
+        historyEntryRepository.updateStatusByIds(messageIds, MessageStatus.SEEN);
     }
 }
