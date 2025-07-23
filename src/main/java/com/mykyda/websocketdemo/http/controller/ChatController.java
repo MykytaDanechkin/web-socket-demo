@@ -1,6 +1,5 @@
 package com.mykyda.websocketdemo.http.controller;
 
-import com.mykyda.websocketdemo.database.entity.HistoryEntry;
 import com.mykyda.websocketdemo.dto.*;
 import com.mykyda.websocketdemo.service.ChatService;
 import com.mykyda.websocketdemo.service.HistoryEntryService;
@@ -39,6 +38,12 @@ public class ChatController {
         return ResponseEntity.ok(messages);
     }
 
+    //TODO handle
+    @GetMapping("/get")
+    public ResponseEntity<ChatDTO> getChat(@RequestParam("id") Long chatId) {
+        return ResponseEntity.ok(chatService.getById(chatId));
+    }
+
 //    @GetMapping("/get-full-history")
 //    public ResponseEntity<List<HistoryEntryDto>> getFullHistory(@RequestParam("chatId") Long chatId) {
 //        var messages = historyEntryService.getFullHistory(chatId);
@@ -71,15 +76,15 @@ public class ChatController {
 
             log.info("Received message: {} from {} at chat {}", messageDTO.getContent(), principal.getName(), messageDTO.getChatId());
 
-            var chat = chatService.getById(messageDTO.getChatId()).getBody();
-            chat.setLastMessage(entityManager.getReference(HistoryEntry.class, message.getId()));
+            var chat = chatService.getById(messageDTO.getChatId());
+            chat.setLastMessage(HistoryEntryDto.builder().id(message.getId()).build());
             chatService.update(chat);
 
-            messagingTemplate.convertAndSend("/topic/chat/" + messageDTO.getChatId(), HistoryEntryDto.of(message));
+            messagingTemplate.convertAndSend("/topic/chat/" + messageDTO.getChatId(), message);
             messagingTemplate.convertAndSendToUser(Objects.equals(principal.getName(),
                     chat.getUser1().getEmail()) ? chat.getUser2().getEmail() : chat.getUser1().getEmail(),
                     "/queue/inbox",
-                    HistoryEntryDto.of(message));
+                    message);
         }
     }
 

@@ -2,9 +2,7 @@ package com.mykyda.websocketdemo.dto;
 
 import com.mykyda.websocketdemo.database.entity.HistoryEntry;
 import com.mykyda.websocketdemo.database.entity.MessageStatus;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.Value;
+import lombok.*;
 import lombok.experimental.FieldNameConstants;
 
 import java.sql.Timestamp;
@@ -13,6 +11,8 @@ import java.sql.Timestamp;
 @FieldNameConstants
 @Getter
 @Setter
+@ToString
+@Builder
 public class HistoryEntryDto {
 
     Long id;

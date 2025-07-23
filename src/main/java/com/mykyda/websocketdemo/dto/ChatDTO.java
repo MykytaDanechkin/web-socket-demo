@@ -21,9 +21,9 @@ public class ChatDTO {
 
     UserDTO user2;
 
-    HistoryEntry lastMessage;
+    HistoryEntryDto lastMessage;
 
     public static ChatDTO of(Chat chat) {
-        return new ChatDTO(chat.getId(), UserDTO.of(chat.getUser1()), UserDTO.of(chat.getUser2()), chat.getLastMessage());
+        return new ChatDTO(chat.getId(), UserDTO.of(chat.getUser1()), UserDTO.of(chat.getUser2()), HistoryEntryDto.of(chat.getLastMessage()));
     }
 }

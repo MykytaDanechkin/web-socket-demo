@@ -5,7 +5,6 @@ import com.mykyda.websocketdemo.database.entity.HistoryEntry;
 import com.mykyda.websocketdemo.database.repository.ChatRepository;
 import com.mykyda.websocketdemo.dto.ChatDTO;
 import com.mykyda.websocketdemo.security.database.entity.User;
-import com.mykyda.websocketdemo.security.service.UserService;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.security.Principal;
 import java.util.List;
 
 @Service
@@ -48,12 +46,12 @@ public class ChatService {
 //    }
 
     @Transactional
-    public ResponseEntity<ChatDTO> getById(Long id) {
+    public ChatDTO getById(Long id) {
         var chat = chatRepository.findById(id).orElse(null);
         if (chat == null) {
-            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+            return null;
         } else {
-            return new ResponseEntity<>(ChatDTO.of(chat), HttpStatus.OK);
+            return ChatDTO.of(chat);
         }
     }
 
@@ -76,7 +74,7 @@ public class ChatService {
 
     @Transactional
     public List<ChatDTO> getAllForUserId(Long userId) {
-        return chatRepository.findAllByUser1IdOrUser2IdOrderByLastMessageTimestampDesc(userId, userId).stream().map(ChatDTO::of).toList();
+        return chatRepository.findAllByUser1IdOrUser2IdAndLastMessageNotNullOrderByLastMessageTimestampDesc(userId, userId).stream().map(ChatDTO::of).toList();
     }
 
     @Transactional

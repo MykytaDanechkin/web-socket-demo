@@ -47,7 +47,7 @@ public class Chat {
         }
     }
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @OnDelete(action = OnDeleteAction.SET_NULL)
     private HistoryEntry lastMessage;
 }

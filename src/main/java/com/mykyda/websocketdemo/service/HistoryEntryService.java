@@ -10,6 +10,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,19 +31,19 @@ public class HistoryEntryService {
     private final EntityManager entityManager;
 
     @Transactional
-    public ResponseEntity<HistoryEntry> save(MessageDTO messageDTO, Principal principal) {
-        var chat = chatService.getById(messageDTO.getChatId()).getBody();
+    public ResponseEntity<HistoryEntryDto> save(MessageDTO messageDTO, Principal principal) {
+        var chat = chatService.getById(messageDTO.getChatId());
         if (chat == null) {
             log.warn("Chat id not found: {}", messageDTO.getChatId());
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } else {
             var historyEntry = HistoryEntry.builder()
                     .chat(entityManager.find(Chat.class, chat.getId()))
-                    .content(messageDTO.getContent())
+                    .content(StringEscapeUtils.escapeHtml4(messageDTO.getContent()))
                     .sendersEmail(principal.getName())
                     .build();
             log.info("Saving history entry: {}", historyEntry);
-            return ResponseEntity.ok(historyEntryRepository.save(historyEntry));
+            return ResponseEntity.ok(HistoryEntryDto.of(historyEntryRepository.save(historyEntry)));
         }
     }
 

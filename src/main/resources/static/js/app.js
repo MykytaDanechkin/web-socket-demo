@@ -71,7 +71,7 @@ $(function () {
                 url: `/api/chat/create`,
                 type: "POST",
                 contentType: "application/json",
-                data: JSON.stringify({ currentUserId: currentUserId, targetUserId: targetId }),
+                data: JSON.stringify({currentUserId: currentUserId, targetUserId: targetId}),
                 success: function (newChat) {
                     const chatHtml = `
                     <div class="user-btn unseen" data-chat-id="${newChat.id}" data-user-email="${targetEmailVal}" data-last-timestamp="0">
@@ -112,9 +112,33 @@ function initializeInboxConnection() {
 function subscribeToInbox() {
     stompClient.subscribe(`/user/queue/inbox`, (msg) => {
         const message = JSON.parse(msg.body);
-        updateLastMessageInChatPreview(message);
+        const chatId = message.chatId;
+
+        const chatDiv = $(`.user-btn[data-chat-id="${chatId}"]`);
+        if (chatDiv.length) {
+            updateLastMessageInChatPreview(message);
+        } else {
+            $.get(`/api/chat/get?id=${chatId}`, function (chat) {
+                const currentUserEmail = $("meta[name='userEmail']").attr("content");
+                const targetUser = (chat.user1.email === currentUserEmail) ? chat.user2 : chat.user1;
+                const targetEmailVal = targetUser.email;
+
+                const chatHtml = `
+                    <div class="user-btn unseen" data-chat-id="${chat.id}" data-user-email="${targetEmailVal}" data-last-timestamp="0">
+                        <div class="chat-email">${targetEmailVal}</div>
+                        <div class="last-message" style="display: none;">
+                            <div class="last-sender"></div>
+                            <div class="last-content"></div>
+                        </div>
+                    </div>
+                `;
+                $("#chatList").prepend(chatHtml);
+                updateLastMessageInChatPreview(message);
+            });
+        }
     });
 }
+
 
 function updateLastMessageInChatPreview(message) {
     const chatDiv = $(`.user-btn[data-chat-id="${message.chatId}"]`);
@@ -140,7 +164,6 @@ function updateLastMessageInChatPreview(message) {
 
     moveChatToTop(chatDiv);
 }
-
 
 
 function connectToChat(chatId) {
@@ -206,7 +229,7 @@ function sendMessage() {
 
     stompClient.publish({
         destination: "/app/i",
-        body: JSON.stringify({ content: text, chatId: currentChatId, getterEmail: targetEmail })
+        body: JSON.stringify({content: text, chatId: currentChatId, getterEmail: targetEmail})
     });
     $("#msgInput").val("");
 }
@@ -258,7 +281,7 @@ function markMessagesAsSeen(ids) {
         url: "/api/chat/mark-seen",
         type: "POST",
         contentType: "application/json",
-        data: JSON.stringify({ chatId: currentChatId, messageIds: ids }),
+        data: JSON.stringify({chatId: currentChatId, messageIds: ids}),
         success: function () {
             ids.forEach(id => {
                 const $msg = $(`.message[data-id='${id}']`);
@@ -292,7 +315,11 @@ function observeSeenMessages() {
         if (seenMessageIds.length > 0) {
             markMessagesAsSeen(seenMessageIds);
         }
-    }, { threshold: 1.0 });
+    }, {
+        root: document.querySelector('#messages'),
+        threshold: 0.3
+    });
+
 
     $(".message").each(function () {
         observer.observe(this);
@@ -330,7 +357,7 @@ function scrollToFirstUnseen() {
     }).first();
 
     if ($firstUnseen.length) {
-        $firstUnseen[0].scrollIntoView({ behavior: 'auto', block: 'center' });
+        $firstUnseen[0].scrollIntoView({behavior: 'auto', block: 'center'});
     } else {
         scrollToBottom();
     }

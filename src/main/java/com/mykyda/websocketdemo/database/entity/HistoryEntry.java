@@ -23,6 +23,7 @@ public class HistoryEntry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Lob
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)

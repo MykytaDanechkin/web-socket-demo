@@ -131,7 +131,7 @@
     align-self: flex-end;
     background: linear-gradient(135deg, #a855f7, #7c3aed);
     color: #f0e6ff;
-    text-align: right;
+    text-align: left;
 }
 
 .left {
