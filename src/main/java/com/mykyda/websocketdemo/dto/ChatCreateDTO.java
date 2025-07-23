@@ -10,4 +10,8 @@ public class ChatCreateDTO {
     private Long targetUserId;
 
     private Long currentUserId;
+
+    private String initialMessage;
+
+    private String targetEmail;
 }

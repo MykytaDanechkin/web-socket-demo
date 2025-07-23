@@ -9,8 +9,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -74,7 +72,7 @@ public class ChatService {
 
     @Transactional
     public List<ChatDTO> getAllForUserId(Long userId) {
-        return chatRepository.findAllByUser1IdOrUser2IdAndLastMessageNotNullOrderByLastMessageTimestampDesc(userId, userId).stream().map(ChatDTO::of).toList();
+        return chatRepository.findAllByUser1IdAndLastMessageNotNullOrUser2IdAndLastMessageNotNullOrderByLastMessageTimestampDesc(userId, userId).stream().map(ChatDTO::of).toList();
     }
 
     @Transactional

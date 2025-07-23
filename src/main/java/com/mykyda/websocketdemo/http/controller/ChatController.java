@@ -52,9 +52,17 @@ public class ChatController {
 //    }
 
     //TODO handle
-    @PostMapping("/create")
-    public ResponseEntity<ChatDTO> createChat(@RequestBody ChatCreateDTO chatCreateDTO) {
-        return ResponseEntity.ok(chatService.createChat(chatCreateDTO.getCurrentUserId(),chatCreateDTO.getTargetUserId()));
+    @PostMapping("/create-with-message")
+    public ResponseEntity<ChatDTO> createChat(@RequestBody ChatCreateDTO chatCreateDTO, Principal principal) {
+        var chat = chatService.createChat(chatCreateDTO.getCurrentUserId(), chatCreateDTO.getTargetUserId());
+        var historyEntry = historyEntryService.save(new MessageDTO(chat.getId(), chatCreateDTO.getInitialMessage(), chatCreateDTO.getTargetEmail()), principal);
+        chat.setLastMessage(historyEntry);
+        chatService.update(chat);
+        messagingTemplate.convertAndSendToUser(Objects.equals(principal.getName(),
+                        chat.getUser1().getEmail()) ? chat.getUser2().getEmail() : chat.getUser1().getEmail(),
+                "/queue/inbox",
+                historyEntry);
+        return ResponseEntity.ok(chat);
     }
 
     //TODO handle
@@ -71,7 +79,7 @@ public class ChatController {
     //TODO validate, optimize
     @MessageMapping("/i")
     public void chatting(MessageDTO messageDTO, Principal principal) {
-        var message = historyEntryService.save(messageDTO, principal).getBody();
+        var message = historyEntryService.save(messageDTO, principal);
         if (message != null) {
 
             log.info("Received message: {} from {} at chat {}", messageDTO.getContent(), principal.getName(), messageDTO.getChatId());
@@ -82,7 +90,7 @@ public class ChatController {
 
             messagingTemplate.convertAndSend("/topic/chat/" + messageDTO.getChatId(), message);
             messagingTemplate.convertAndSendToUser(Objects.equals(principal.getName(),
-                    chat.getUser1().getEmail()) ? chat.getUser2().getEmail() : chat.getUser1().getEmail(),
+                            chat.getUser1().getEmail()) ? chat.getUser2().getEmail() : chat.getUser1().getEmail(),
                     "/queue/inbox",
                     message);
         }

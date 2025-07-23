@@ -31,11 +31,11 @@ public class HistoryEntryService {
     private final EntityManager entityManager;
 
     @Transactional
-    public ResponseEntity<HistoryEntryDto> save(MessageDTO messageDTO, Principal principal) {
+    public HistoryEntryDto save(MessageDTO messageDTO, Principal principal) {
         var chat = chatService.getById(messageDTO.getChatId());
         if (chat == null) {
             log.warn("Chat id not found: {}", messageDTO.getChatId());
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return null;
         } else {
             var historyEntry = HistoryEntry.builder()
                     .chat(entityManager.find(Chat.class, chat.getId()))
@@ -43,7 +43,7 @@ public class HistoryEntryService {
                     .sendersEmail(principal.getName())
                     .build();
             log.info("Saving history entry: {}", historyEntry);
-            return ResponseEntity.ok(HistoryEntryDto.of(historyEntryRepository.save(historyEntry)));
+            return HistoryEntryDto.of(historyEntryRepository.save(historyEntry));
         }
     }
 

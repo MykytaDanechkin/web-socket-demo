@@ -14,4 +14,8 @@ public class LoginDto {
     String password;
 
     String email;
+
+    public String getEmail() {
+        return email.toLowerCase();
+    }
 }
