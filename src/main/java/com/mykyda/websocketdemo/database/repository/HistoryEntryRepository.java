@@ -15,9 +15,11 @@ import java.util.List;
 @Repository
 public interface HistoryEntryRepository extends JpaRepository<HistoryEntry, Long> {
 
-    Page<HistoryEntry> findAllByChatIdOrderByTimestampDesc(Long chatId, Pageable pageable);
+    Page<HistoryEntry> findAllByChatIdAndStatusNotOrderByTimestampDesc(Long chatId, MessageStatus status ,Pageable pageable);
 
-    List<HistoryEntry> findAllByChatIdOrderByTimestampDesc(Long chatId);
+    List<HistoryEntry> findAllByChatIdAndStatusOrderByTimestampDesc(Long chatId, MessageStatus status);
+
+    Page<HistoryEntry> findAllByChatIdOrderByTimestampDesc(Long chatId, Pageable pageable);
 
     @Modifying
     @Query("UPDATE HistoryEntry h SET h.status = :status WHERE h.id  in :ids")

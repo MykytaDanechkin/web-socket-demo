@@ -3,11 +3,26 @@ let currentSubscription = null;
 let currentChatId = null;
 let targetEmail = null;
 
+let currentHistoryPage = 1;
+let initialPageSize = null;
+let loadingHistory = false;
+let allHistoryLoaded = false;
+
+
 $(() => {
     initializeInboxConnection();
     initSend();
     initSearch();
     initChatSelection();
+
+    $(document).on("click", "#loadMoreBtn", loadMoreHistory);
+
+    $("#messages").on("scroll", function () {
+        if (this.scrollTop === 0) {
+            loadMoreHistory();
+        }
+    });
+
 });
 
 function initSend() {
@@ -123,6 +138,11 @@ function connectToChat(chatId) {
     const connectCallback = () => {
         subscribeToChat(chatId);
         if (typeof chatId !== 'string' || !chatId.startsWith('temp-')) {
+            currentHistoryPage = 1;
+            allHistoryLoaded = false;
+            loadingHistory = false;
+            initialPageSize = null;
+            $("#loadMoreIndicator").removeClass("hidden");
             loadInitialHistory();
         }
     };
@@ -137,14 +157,41 @@ function connectToChat(chatId) {
     }
 }
 
-
 function disconnectFromChat() {
     if (currentSubscription) currentSubscription.unsubscribe();
     currentSubscription = null;
     currentChatId = null;
     $("#messages").children().remove();
+    $("#loadMoreIndicator").addClass("hidden"); // ховаємо
 }
 
+function loadMoreHistory() {
+    if (loadingHistory || allHistoryLoaded || !initialPageSize) return;
+    loadingHistory = true;
+
+    const $messages = $("#messages");
+    const scrollPosBefore = $messages[0].scrollHeight;
+
+    $.get(`/api/chat/get-full-history?chatId=${currentChatId}&pageSize=${initialPageSize}&page=${currentHistoryPage}`, data => {
+        if (!data.length) {
+            allHistoryLoaded = true;
+            $("#loadMoreIndicator").addClass("hidden"); // ховаємо, бо більше нема що вантажити
+            return;
+        }
+
+        data.reverse().forEach(msg => {
+            $("#messages").prepend(renderMessageHtml(msg));
+        });
+
+        currentHistoryPage++;
+        observeSeenMessages();
+
+        const scrollPosAfter = $messages[0].scrollHeight;
+        $messages.scrollTop(scrollPosAfter - scrollPosBefore);
+    }).always(() => {
+        loadingHistory = false;
+    });
+}
 
 function subscribeToChat(chatId) {
     currentSubscription = stompClient.subscribe(`/topic/chat/${chatId}`, msg => {
@@ -214,18 +261,19 @@ function sendMessage() {
     $("#msgInput").val("");
 }
 
-
-
 function loadInitialHistory() {
     $.get(`/api/chat/get-history?chatId=${currentChatId}`, data => {
-        (data.content || data).forEach(showMessage);
+        const messages = data.content || data;
+        initialPageSize = messages.length;
+
+        $("#messages").empty().prepend($("#loadMoreIndicator"));
+        messages.forEach(msg => {
+            $("#messages").append(renderMessageHtml(msg));
+        });
+
         observeSeenMessages();
         scrollToFirstUnseen();
     });
-}
-
-function showMessage(msg) {
-    $("#messages").prepend(renderMessageHtml(msg));
 }
 
 function showMessageAtBottom(msg) {
@@ -312,7 +360,7 @@ function observeSeenMessages() {
         if (ids.length > 0) markMessagesAsSeen(ids);
     }, {
         root: document.querySelector("#messages"),
-        threshold: 0.3
+        threshold: 0.01
     });
 
     $(".message").each(function () {

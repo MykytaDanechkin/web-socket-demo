@@ -3,7 +3,6 @@ package com.mykyda.websocketdemo.http.controller;
 import com.mykyda.websocketdemo.dto.*;
 import com.mykyda.websocketdemo.service.ChatService;
 import com.mykyda.websocketdemo.service.HistoryEntryService;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -28,8 +27,6 @@ public class ChatController {
 
     private final HistoryEntryService historyEntryService;
 
-    private final EntityManager entityManager;
-
     //todo handle
     @GetMapping("/get-history")
     public ResponseEntity<List<HistoryEntryDto>> getLatestHistory(@RequestParam("chatId") Long chatId) {
@@ -44,14 +41,14 @@ public class ChatController {
         return ResponseEntity.ok(chatService.getById(chatId));
     }
 
-//    @GetMapping("/get-full-history")
-//    public ResponseEntity<List<HistoryEntryDto>> getFullHistory(@RequestParam("chatId") Long chatId) {
-//        var messages = historyEntryService.getFullHistory(chatId);
-//        log.info("full history acquired for chat {}", chatId);
-//        return ResponseEntity.ok(messages);
-//    }
+    @GetMapping("/get-full-history")
+    public ResponseEntity<List<HistoryEntryDto>> getFullHistory(@RequestParam("chatId") Long chatId, @RequestParam("pageSize") Integer pageSize, @RequestParam("page") Integer page ) {
+        var messages = historyEntryService.getEarlierHistory(chatId,pageSize,page);
+        log.info("full history acquired for chat {}", chatId);
+        return ResponseEntity.ok(messages);
+    }
 
-    //TODO handle
+    //TODO handle , optimize
     @PostMapping("/create-with-message")
     public ResponseEntity<ChatDTO> createChat(@RequestBody ChatCreateDTO chatCreateDTO, Principal principal) {
         var chat = chatService.createChat(chatCreateDTO.getCurrentUserId(), chatCreateDTO.getTargetUserId());

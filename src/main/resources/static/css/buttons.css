@@ -15,8 +15,7 @@
 
 .auth-btn,
 .auth-form button,
-.auth-form .btn-register,
-.load-history-btn {
+.auth-form .btn-register {
     background: var(--primary);
     color: white;
     border: none;
@@ -31,16 +30,21 @@
 
 .auth-btn:hover,
 .auth-form button:hover,
-.auth-form .btn-register:hover,
-.load-history-btn:hover {
+.auth-form .btn-register:hover {
     background-color: var(--primary-light);
     box-shadow: 0 0 10px #d1b9ff;
 }
 
-.load-history-btn {
-    align-self: center;
-    margin-bottom: 10px;
-    padding: 8px 18px;
-    box-shadow: 0 0 8px #9d86ff;
-    z-index: 1;
+#loadMoreIndicator {
+    text-align: center;
+    padding: 10px;
+    font-size: 13px;
+    color: #666;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #e0e0e0;
+    font-style: italic;
+}
+
+#loadMoreIndicator.hidden {
+    display: none;
 }
