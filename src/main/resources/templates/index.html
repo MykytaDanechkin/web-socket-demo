@@ -5,6 +5,8 @@
     <title>Messenger</title>
     <meta name="userEmail" th:content="${userEmail}">
     <meta name="userId" th:content="${userId}">
+    <meta name="userTag" th:content="${userTag}">
+    <meta name="userDisplayName" th:content="${userDisplayName}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
@@ -22,7 +24,8 @@
     </div>
 
     <div class="right-side">
-        <span th:if="${isAuthenticated}" th:text="${userEmail}" style="font-weight: bold; margin-right: 15px;"></span>
+        <span th:if="${isAuthenticated}" th:text="${userDisplayName + ' @' + userTag}" id="userIdentity" style="font-weight: bold; margin-right: 15px;"></span>
+        <button th:if="${isAuthenticated}" id="changeNameBtn" class="auth-btn" type="button" style="margin-right: 10px;">Edit name</button>
         <a th:if="${!isAuthenticated}" href="/auth/login" class="auth-btn">Login</a>
         <form th:if="${isAuthenticated}" action="/auth/logout" method="post" style="display: inline;">
             <button type="submit" class="auth-btn">Logout</button>
@@ -32,22 +35,23 @@
 <div id="container">
     <div id="users">
         <div id="search-section">
-            <input type="text" id="globalUserSearch" placeholder="Search users by email..." autocomplete="off">
+            <input type="text" id="globalUserSearch" placeholder="Search users by tag..." autocomplete="off">
             <div id="globalUserResults" class="search-results"></div>
         </div>
         <div id="chatList">
             <div th:each="chat : ${chats}"
-                 th:classappend="${chat.lastMessage != null and chat.lastMessage.status.name() == 'UNSEEN' and chat.lastMessage.sendersEmail != userEmail} ? 'unseen' : ''"
+                 th:classappend="${chat.lastMessage != null and chat.lastMessage.status.name() == 'UNSEEN' and chat.lastMessage.senderId != userId} ? 'unseen' : ''"
                  class="user-btn"
                  th:data-chat-id="${chat.id}"
+                 th:data-user-id="${chat.user1.id == userId} ? ${chat.user2.id} : ${chat.user1.id}"
                  th:data-user-email="${chat.user1.id == userId} ? ${chat.user2.email} : ${chat.user1.email}">
 
-                <div class="chat-email"
-                     th:text="${chat.user1.id == userId} ? ${chat.user2.email} : ${chat.user1.email}">User Email
+                <div class="chat-title"
+                     th:text="${chat.user1.id == userId} ? ${chat.user2.displayName + ' @' + chat.user2.tag} : ${chat.user1.displayName + ' @' + chat.user1.tag}">User
                 </div>
 
                 <div class="last-message" th:if="${chat.lastMessage} != null">
-                    <div class="last-sender" th:text="${chat.lastMessage.sendersEmail}"></div>
+                    <div class="last-sender" th:text="${chat.lastMessage.senderId == userId} ? 'You' : (${chat.user1.id == userId} ? ${chat.user2.displayName + ' @' + chat.user2.tag} : ${chat.user1.displayName + ' @' + chat.user1.tag})"></div>
                     <div class="last-content" th:text="${chat.lastMessage.content}"></div>
                 </div>
             </div>

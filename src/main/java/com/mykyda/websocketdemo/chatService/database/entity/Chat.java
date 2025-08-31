@@ -1,4 +1,4 @@
-package com.mykyda.websocketdemo.database.entity;
+package com.mykyda.websocketdemo.chatService.database.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.mykyda.websocketdemo.security.database.entity.User;

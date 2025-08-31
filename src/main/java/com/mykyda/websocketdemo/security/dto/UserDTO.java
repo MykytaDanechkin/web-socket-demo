@@ -14,9 +14,13 @@ public class UserDTO {
 
     Long id;
 
+    String displayName;
+
+    String tag;
+
     String email;
 
     public static UserDTO of(User user) {
-        return new UserDTO(user.getId(), user.getEmail());
+        return new UserDTO(user.getId(), user.getDisplayName(), user.getTag(), user.getEmail());
     }
 }

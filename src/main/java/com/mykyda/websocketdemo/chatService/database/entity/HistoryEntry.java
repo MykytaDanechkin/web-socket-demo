@@ -1,4 +1,4 @@
-package com.mykyda.websocketdemo.database.entity;
+package com.mykyda.websocketdemo.chatService.database.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -32,7 +32,7 @@ public class HistoryEntry {
     @JoinColumn(name = "chat_id", nullable = false)
     private Chat chat;
 
-    private String sendersEmail;
+    private Long sendersId;
 
     @Builder.Default
     private Timestamp timestamp = new Timestamp(System.currentTimeMillis());
@@ -46,7 +46,7 @@ public class HistoryEntry {
         return "HistoryEntry{" +
                 "id=" + id +
                 ", content='" + content + '\'' +
-                ", sendersEmail='" + sendersEmail + '\'' +
+                ", sendersId='" + sendersId + '\'' +
                 ", timestamp=" + timestamp +
                 ", status=" + status +
                 ", chatId=" + chat.getId() +

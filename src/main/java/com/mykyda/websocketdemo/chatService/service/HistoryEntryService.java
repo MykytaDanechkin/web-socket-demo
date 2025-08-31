@@ -1,11 +1,11 @@
-package com.mykyda.websocketdemo.service;
+package com.mykyda.websocketdemo.chatService.service;
 
-import com.mykyda.websocketdemo.database.entity.Chat;
-import com.mykyda.websocketdemo.database.entity.HistoryEntry;
-import com.mykyda.websocketdemo.database.entity.MessageStatus;
-import com.mykyda.websocketdemo.database.repository.HistoryEntryRepository;
-import com.mykyda.websocketdemo.dto.HistoryEntryDto;
-import com.mykyda.websocketdemo.dto.MessageDTO;
+import com.mykyda.websocketdemo.chatService.database.entity.Chat;
+import com.mykyda.websocketdemo.chatService.database.entity.HistoryEntry;
+import com.mykyda.websocketdemo.chatService.database.entity.MessageStatus;
+import com.mykyda.websocketdemo.chatService.database.repository.HistoryEntryRepository;
+import com.mykyda.websocketdemo.chatService.dto.HistoryEntryDto;
+import com.mykyda.websocketdemo.chatService.dto.MessageDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,6 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.security.Principal;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -30,7 +29,7 @@ public class HistoryEntryService {
     private final EntityManager entityManager;
 
     @Transactional
-    public HistoryEntryDto save(MessageDTO messageDTO, Principal principal) {
+    public HistoryEntryDto save(MessageDTO messageDTO) {
         var chat = chatService.getById(messageDTO.getChatId());
         if (chat == null) {
             log.warn("Chat id not found: {}", messageDTO.getChatId());
@@ -39,10 +38,11 @@ public class HistoryEntryService {
             var historyEntry = HistoryEntry.builder()
                     .chat(entityManager.find(Chat.class, chat.getId()))
                     .content(StringEscapeUtils.escapeHtml4(messageDTO.getContent()))
-                    .sendersEmail(principal.getName())
+                    .sendersId(messageDTO.getSendersId())
                     .build();
             log.info("Saving history entry: {}", historyEntry);
-            return HistoryEntryDto.of(historyEntryRepository.save(historyEntry));
+            var saved = historyEntryRepository.save(historyEntry);
+            return HistoryEntryDto.of(saved);
         }
     }
 
@@ -63,7 +63,10 @@ public class HistoryEntryService {
     //TOdo handle
     @Transactional
     public List<HistoryEntryDto> getEarlierHistory(Long chatId, Integer pageSize,  Integer page) {
-        return historyEntryRepository.findAllByChatIdOrderByTimestampDesc(chatId,PageRequest.of(page,pageSize)).stream().map(HistoryEntryDto::of).toList();
+        return historyEntryRepository.findAllByChatIdOrderByTimestampDesc(chatId,PageRequest.of(page,pageSize))
+                .stream()
+                .map(HistoryEntryDto::of)
+                .toList();
     }
 
     //TODO handle errors

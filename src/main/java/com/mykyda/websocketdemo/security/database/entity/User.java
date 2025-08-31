@@ -25,6 +25,14 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @NotEmpty(message = "Display Name shouldn`t be null or empty")
+    @Builder.Default
+    String displayName = "Anon";
+
+    @NotEmpty(message = "tag shouldn`t be null or empty")
+    @Column(unique = true)
+    String tag;
+
     @Email
     @NotEmpty(message = "email shouldn`t be null")
     String email;

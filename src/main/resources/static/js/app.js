@@ -14,6 +14,7 @@ $(() => {
     initSend();
     initSearch();
     initChatSelection();
+    initDisplayNameEdit();
 
     $(document).on("click", "#loadMoreBtn", loadMoreHistory);
 
@@ -39,27 +40,30 @@ function initSend() {
 function initSearch() {
     const $searchInput = $("#globalUserSearch");
     const $results = $("#globalUserResults");
-    const currentEmail = $("meta[name='userEmail']").attr("content");
+    const currentUserId = Number($("meta[name='userId']").attr("content"));
 
     $searchInput.on("input", function () {
         const query = $(this).val().trim();
-        if (query.length < 4) return $results.empty();
+        if (query.length < 2) return $results.empty();
 
-        $.get(`/api/user/find?email=${encodeURIComponent(query)}`, users => {
+        $.get(`/api/user/find?tag=${encodeURIComponent(query)}`, users => {
             const html = users
-                .filter(u => u.email !== currentEmail)
-                .map(u => `<div class="search-user" data-user-id="${u.id}" data-user-email="${u.email}">${u.email}</div>`)
+                .filter(u => u.id !== currentUserId)
+                .map(u => `<div class="search-user" data-user-id="${u.id}" data-display-name="${u.displayName}" data-user-tag="${u.tag}" data-email="${u.email}">${u.displayName} @${u.tag}</div>`)
                 .join("");
             $results.html(html);
+        }).fail(err => {
+            console.error('Search failed', err);
         });
     });
 
     $(document).on("click", ".search-user", function () {
         const targetId = $(this).data("user-id");
-        const targetEmailVal = $(this).data("user-email");
-        const currentUserId = $("meta[name='userId']").attr("content");
+        const targetDisplayName = $(this).data("display-name");
+        const targetTag = $(this).data("user-tag");
+        const email = $(this).data("email");
 
-        const $existing = $(`.user-btn[data-user-email='${targetEmailVal}']`);
+        const $existing = $(`.user-btn[data-user-id='${targetId}']`);
         if ($existing.length) {
             $existing.trigger("click");
             $("#globalUserSearch").val("");
@@ -67,7 +71,7 @@ function initSearch() {
             return;
         } else {
             const tempChatId = `temp-${Date.now()}`;
-            const html = renderChatPreview(tempChatId, targetEmailVal, targetId);
+            const html = renderChatPreview(tempChatId, targetDisplayName, targetTag, email, targetId);
             $("#chatList").prepend(html);
             $(`.user-btn[data-chat-id='${tempChatId}']`).trigger("click");
         }
@@ -80,7 +84,7 @@ function initChatSelection() {
     $(document).on("click", ".user-btn", function () {
         const $this = $(this);
         const chatId = $this.data("chat-id");
-        targetEmail = $this.data("user-email");
+        targetEmail = $this.data("user-email") || null;
 
         const isActive = $this.hasClass("active");
 
@@ -120,11 +124,13 @@ function subscribeToInbox() {
             updateLastMessageInChatPreview(message);
         } else {
             $.get(`/api/chat/get?id=${chatId}`, chat => {
-                const currentEmail = $("meta[name='userEmail']").attr("content");
-                const target = chat.user1.email === currentEmail ? chat.user2 : chat.user1;
-                const html = renderChatPreview(chat.id, target.email);
+                const currentUserId = Number($("meta[name='userId']").attr("content"));
+                const target = chat.user1.id === currentUserId ? chat.user2 : chat.user1;
+                const html = renderChatPreview(chat.id, target.displayName, target.tag, target.email, target.id);
                 $("#chatList").prepend(html);
                 updateLastMessageInChatPreview(message);
+            }).fail(err => {
+                console.error('Failed to fetch chat', err);
             });
         }
     });
@@ -161,33 +167,45 @@ function disconnectFromChat() {
     if (currentSubscription) currentSubscription.unsubscribe();
     currentSubscription = null;
     currentChatId = null;
+    loadingHistory = false;
+    allHistoryLoaded = false;
     $("#messages").children().remove();
-    $("#loadMoreIndicator").addClass("hidden"); // ховаємо
+    $("#loadMoreIndicator").addClass("hidden");
 }
 
 function loadMoreHistory() {
-    if (loadingHistory || allHistoryLoaded || !initialPageSize) return;
+    if (loadingHistory || allHistoryLoaded || !initialPageSize || !currentChatId) return;
     loadingHistory = true;
 
     const $messages = $("#messages");
-    const scrollPosBefore = $messages[0].scrollHeight;
+    const prevScrollHeight = $messages[0].scrollHeight;
+    
+    const $firstMsg = $("#messages .message").first();
+    const currentOldestTs = $firstMsg.length ? Number($firstMsg.data("ts")) : Number.MAX_SAFE_INTEGER;
 
     $.get(`/api/chat/get-full-history?chatId=${currentChatId}&pageSize=${initialPageSize}&page=${currentHistoryPage}`, data => {
-        if (!data.length) {
+        if (!Array.isArray(data) || data.length === 0) {
             allHistoryLoaded = true;
-            $("#loadMoreIndicator").addClass("hidden"); // ховаємо, бо більше нема що вантажити
+            $("#loadMoreIndicator").addClass("hidden");
             return;
         }
-
-        data.reverse().forEach(msg => {
+        const existingIds = new Set($("#messages .message").map((_, el) => $(el).data("id")).get());
+        const toPrepend = data.filter(m => {
+            if (!m || m.id == null || !m.timestamp) return false;
+            const ts = new Date(m.timestamp).getTime();
+            return !existingIds.has(m.id) && ts < currentOldestTs;
+        });
+        
+        toPrepend.forEach(msg => {
             $("#messages").prepend(renderMessageHtml(msg));
         });
 
         currentHistoryPage++;
         observeSeenMessages();
 
-        const scrollPosAfter = $messages[0].scrollHeight;
-        $messages.scrollTop(scrollPosAfter - scrollPosBefore);
+        const newScrollHeight = $messages[0].scrollHeight;
+        const delta = newScrollHeight - prevScrollHeight;
+        $messages.scrollTop(delta);
     }).always(() => {
         loadingHistory = false;
     });
@@ -195,18 +213,22 @@ function loadMoreHistory() {
 
 function subscribeToChat(chatId) {
     currentSubscription = stompClient.subscribe(`/topic/chat/${chatId}`, msg => {
-        const message = JSON.parse(msg.body);
+        const payload = JSON.parse(msg.body);
 
-        if (Array.isArray(message)) {
-            message.forEach(id => {
+        if (!currentChatId || String(currentChatId) !== String(chatId)) return;
+
+        if (Array.isArray(payload)) {
+            payload.forEach(id => {
                 const $msg = $(`.message[data-id='${id}']`);
                 $msg.data("seen", true);
                 if ($msg.data("own")) $msg.find(".status-label").text("SEEN");
             });
-
             $(`.user-btn[data-chat-id="${chatId}"]`).removeClass("unseen");
             return;
         }
+
+        const message = payload;
+        if (!message || message.content == null || message.senderId == null) return;
 
         showMessageAtBottom(message);
         updateLastMessageInChatPreview(message);
@@ -224,7 +246,8 @@ function sendMessage() {
         const targetUserId = $tempChat.data('user-id');
 
         const currentUserId = $("meta[name='userId']").attr("content");
-        const currentUserEmail = $("meta[name='userEmail']").attr("content");
+        const currentUserDisplayName = $("meta[name='userDisplayName']").attr("content");
+        const currentUserTag = $("meta[name='userTag']").attr("content");
 
         $.post({
             url: `/api/chat/create-with-message`,
@@ -232,8 +255,8 @@ function sendMessage() {
             data: JSON.stringify({
                 currentUserId,
                 targetUserId,
-                targetEmail,
                 initialMessage: text,
+                targetEmail: $tempChat.data('user-email') || null
             }),
             success: newChat => {
                 $tempChat.attr('data-chat-id', newChat.id)
@@ -246,17 +269,25 @@ function sendMessage() {
                 updateLastMessageInChatPreview({
                     chatId: newChat.id,
                     content: text,
-                    sendersEmail: currentUserEmail,
+                    sendersEmail: $("meta[name='userEmail']").attr("content"),
                     timestamp: new Date().toISOString()
                 });
+            },
+            error: err => {
+                console.error('Failed to create chat with initial message', err);
             }
         });
         return;
     }
 
+    const sendersId = Number($("meta[name='userId']").attr("content"));
+    const target = targetEmail || $(".user-btn.active").data("user-email") || null;
+    if (!target) {
+        console.error('Target email is missing for this chat');
+    }
     stompClient.publish({
         destination: "/app/i",
-        body: JSON.stringify({content: text, chatId: currentChatId, getterEmail: targetEmail})
+        body: JSON.stringify({content: text, chatId: currentChatId, sendersId, targetEmail: target})
     });
     $("#msgInput").val("");
 }
@@ -266,8 +297,10 @@ function loadInitialHistory() {
         const messages = data.content || data;
         initialPageSize = messages.length;
 
+        const sorted = [...messages].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
         $("#messages").empty().prepend($("#loadMoreIndicator"));
-        messages.forEach(msg => {
+        sorted.forEach(msg => {
             $("#messages").append(renderMessageHtml(msg));
         });
 
@@ -277,30 +310,42 @@ function loadInitialHistory() {
 }
 
 function showMessageAtBottom(msg) {
+    if (!msg || msg.content == null || msg.senderId == null) return;
     $("#messages").append(renderMessageHtml(msg));
 }
 
 function renderMessageHtml(msg) {
-    const currentEmail = $("meta[name='userEmail']").attr("content");
-    const side = msg.sendersEmail === currentEmail ? 'right' : 'left';
+    const currentUserId = Number($("meta[name='userId']").attr("content"));
+    const senderId = msg.senderId;
+    const content = msg.content ?? '';
+    const ts = msg.timestamp ? new Date(msg.timestamp) : new Date();
+    const side = senderId === currentUserId ? 'right' : 'left';
     const seen = msg.status === "SEEN";
-    const time = formatTime(msg.timestamp);
+    const time = formatTime(ts);
+
+    let senderLabel = 'You';
+    if (senderId !== currentUserId) {
+        const $activeTitle = $(".user-btn.active .chat-title");
+        const title = $activeTitle.length ? $activeTitle.text().trim() : '';
+        senderLabel = title || 'User';
+    }
 
     return `
-        <div class="message ${side}" data-id="${msg.id}" data-seen="${seen}" data-own="${msg.sendersEmail === currentEmail}">
+        <div class="message ${side}" data-id="${msg.id}" data-seen="${seen}" data-own="${senderId === currentUserId}" data-ts="${ts.getTime()}">
             <div>
-                <strong>${time} ${msg.sendersEmail}</strong>
-                ${msg.sendersEmail === currentEmail ? `<span class="status-label">${msg.status}</span>` : ``}
+                <strong>${time}</strong>
+                <span class="sender-label">${senderLabel}</span>
+                ${senderId === currentUserId ? `<span class="status-label">${msg.status ?? ''}</span>` : ``}
             </div>
-            <div>${msg.content}</div>
+            <div>${content}</div>
         </div>
     `;
 }
 
-function renderChatPreview(chatId, email, userId) {
+function renderChatPreview(chatId, displayName, tag, email, userId) {
     return `
         <div class="user-btn unseen" data-chat-id="${chatId}" data-user-email="${email}" data-user-id="${userId}" data-last-timestamp="0">
-            <div class="chat-email">${email}</div>
+            <div class="chat-title">${displayName} @${tag}</div>
             <div class="last-message" style="display: none;">
                 <div class="last-sender"></div>
                 <div class="last-content"></div>
@@ -311,15 +356,19 @@ function renderChatPreview(chatId, email, userId) {
 
 function updateLastMessageInChatPreview(message) {
     const $chatDiv = $(`.user-btn[data-chat-id="${message.chatId}"]`);
-    if (!$chatDiv.length) return;
+    if (!$chatDiv.length || !message) return;
 
-    const currentEmail = $("meta[name='userEmail']").attr("content");
+    const currentUserId = Number($("meta[name='userId']").attr("content"));
     const isUnseen = message.status === "UNSEEN";
-    const isOwn = message.sendersEmail === currentEmail;
+    const isOwn = message.senderId === currentUserId;
 
-    $chatDiv.find(".last-sender").text(message.sendersEmail);
-    $chatDiv.find(".last-content").text(message.content);
-    $chatDiv.attr("data-last-timestamp", message.timestamp);
+    const title = $chatDiv.find('.chat-title').text().trim();
+    const label = isOwn ? 'You' : (title || 'User');
+
+    $chatDiv.find(".last-sender").text(label);
+    $chatDiv.find(".last-content").text(message.content ?? '');
+    const ts = message.timestamp ? new Date(message.timestamp).getTime() : Date.now();
+    $chatDiv.attr("data-last-timestamp", String(ts));
 
     $chatDiv.toggleClass("unseen", isUnseen && !isOwn);
     if (!$chatDiv.hasClass("active")) $chatDiv.find(".last-message").show();
@@ -396,6 +445,30 @@ function scrollToFirstUnseen() {
     }).first();
 
     $msg.length ? $msg[0].scrollIntoView({behavior: "auto", block: "center"}) : scrollToBottom();
+}
+
+function initDisplayNameEdit() {
+    $(document).on('click', '#changeNameBtn', () => {
+        const current = $("meta[name='userDisplayName']").attr("content") || '';
+        const newName = prompt('Enter new display name', current);
+        if (newName == null) return;
+        const trimmed = newName.trim();
+        if (!trimmed) return;
+
+        $.ajax({
+            url: '/api/user/display-name',
+            method: 'POST',
+            contentType: 'text/plain; charset=UTF-8',
+            data: trimmed,
+        }).done(() => {
+            $("meta[name='userDisplayName']").attr("content", trimmed);
+            const userTag = $("meta[name='userTag']").attr("content") || '';
+            $('#userIdentity').text(`${trimmed} @${userTag}`);
+        }).fail(err => {
+            console.error('Failed to update display name', err);
+            alert('Failed to update display name');
+        });
+    });
 }
 
 function formatTime(ts) {

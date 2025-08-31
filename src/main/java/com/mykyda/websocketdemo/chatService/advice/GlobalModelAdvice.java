@@ -1,8 +1,8 @@
-package com.mykyda.websocketdemo.advice;
+package com.mykyda.websocketdemo.chatService.advice;
 
-import com.mykyda.websocketdemo.dto.ChatDTO;
+import com.mykyda.websocketdemo.chatService.dto.ChatDTO;
 import com.mykyda.websocketdemo.security.service.UserService;
-import com.mykyda.websocketdemo.service.ChatService;
+import com.mykyda.websocketdemo.chatService.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -31,6 +31,16 @@ public class GlobalModelAdvice {
     @ModelAttribute("userId")
     public Long userId(Authentication authentication) {
         return (authentication != null) ? userService.getByEmail(authentication.getName()).getId() : null;
+    }
+
+    @ModelAttribute("userTag")
+    public String userTag(Authentication authentication) {
+        return (authentication != null) ? userService.getByEmail(authentication.getName()).getTag() : null;
+    }
+
+    @ModelAttribute("userDisplayName")
+    public String userDisplayName(Authentication authentication) {
+        return (authentication != null) ? userService.getByEmail(authentication.getName()).getDisplayName() : null;
     }
 
     @ModelAttribute("chats")

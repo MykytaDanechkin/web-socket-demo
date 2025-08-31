@@ -25,6 +25,12 @@
 </header>
 <div class="page-center">
     <form action="/auth/registration" method="post" class="auth-form">
+        <label for="displayName">Display name:
+            <input id="displayName" type="text" name="displayName" placeholder="Anon">
+        </label>
+        <label for="tag">Login:
+            <input id="tag" type="text" name="tag" required minlength="4" />
+        </label>
         <label for="email">Email:
             <input id="email" type="email" name="email" required />
         </label>

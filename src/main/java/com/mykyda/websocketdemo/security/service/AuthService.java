@@ -32,36 +32,39 @@ public class AuthService {
 
     @Transactional
     public ResponseEntity<Cookie> login(LoginDto loginDto) {
-        var user = userService.getByEmail(loginDto.getEmail());
+        var user = userService.getByEmail(loginDto.email());
         if (user != null) {
             try {
-                authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword()));
-                log.info("Authentication Successful in {}", loginDto.getEmail());
+                authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.email(), loginDto.password()));
+                log.info("Authentication Successful in {}", loginDto.email());
                 return ResponseEntity.ok(jwtService.generateCookie(user));
             } catch (BadCredentialsException e) {
-                log.warn("Bad credentials for email {}", loginDto.getEmail());
+                log.warn("Bad credentials for email {}", loginDto.email());
                 return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
             }
         } else {
-            log.warn("Invalid email {}", loginDto.getEmail());
+            log.warn("Invalid email {}", loginDto.email());
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
     }
 
     @Transactional
     public ResponseEntity<String> register(RegistrationDto rd) {
-        if (userService.getByEmail(rd.getEmail()) == null) {
+        if (userService.getByEmail(rd.email()) == null) {
             var user = User.builder()
-                    .email(rd.getEmail())
-                    .password(passwordEncoder.encode(rd.getPassword()))
+                    .email(rd.email())
+                    .tag(rd.tag())
+                    .password(passwordEncoder.encode(rd.password()))
                     .role(Role.USER)
                     .build();
-            System.out.println(rd.getPassword());
+            if (!rd.displayName().isEmpty()){
+                user.setDisplayName(rd.displayName());
+            }
             userService.save(user);
-            log.info("Registration Successful in {}", rd.getEmail());
+            log.info("Registration Successful in {}", rd.email());
             return new ResponseEntity<>(HttpStatus.CREATED);
         } else {
-            log.warn("User {} already exists", rd.getEmail());
+            log.warn("User {} already exists", rd.email());
             return new ResponseEntity<>("email already in use", HttpStatus.CONFLICT);
         }
     }

@@ -1,7 +1,7 @@
-package com.mykyda.websocketdemo.database.repository;
+package com.mykyda.websocketdemo.chatService.database.repository;
 
-import com.mykyda.websocketdemo.database.entity.HistoryEntry;
-import com.mykyda.websocketdemo.database.entity.MessageStatus;
+import com.mykyda.websocketdemo.chatService.database.entity.HistoryEntry;
+import com.mykyda.websocketdemo.chatService.database.entity.MessageStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

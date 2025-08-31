@@ -36,12 +36,17 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
-    public List<User> getAll(){
-        return userRepository.findAll();
+    public List<UserDTO> getAllContainsTag (String tag, String usersEmail) {
+        return userRepository.findByTagContains(tag).stream()
+                .filter(u -> !Objects.equals(u.getEmail(), usersEmail))
+                .map(UserDTO::of)
+                .toList();
     }
 
     @Transactional
-    public List<UserDTO> getAllContainsEmail (String email, String usersEmail) {
-        return userRepository.findByEmailContains(email).stream().map(UserDTO::of).filter(u-> !Objects.equals(u.getEmail(), usersEmail)).toList();
+    public User updateDisplayName(String email, String newDisplayName) {
+        var user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("Failed to retrieve user " + email));
+        user.setDisplayName(newDisplayName);
+        return userRepository.save(user);
     }
 }

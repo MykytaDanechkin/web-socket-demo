@@ -6,9 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
@@ -22,7 +20,13 @@ public class UsersController {
 
     //TODO handle, log
     @GetMapping("/find")
-    public ResponseEntity<List<UserDTO>> findAllByEmail(@RequestParam("email") String email, Principal principal) {
-        return new ResponseEntity<>(userService.getAllContainsEmail(email, principal.getName()), HttpStatus.OK);
+    public ResponseEntity<List<UserDTO>> findAllByTag(@RequestParam("tag") String tag, Principal principal) {
+        return new ResponseEntity<>(userService.getAllContainsTag(tag, principal.getName()), HttpStatus.OK);
+    }
+
+    @PostMapping("/display-name")
+    public ResponseEntity<Void> updateDisplayName(@RequestBody String newDisplayName, Principal principal) {
+        userService.updateDisplayName(principal.getName(), newDisplayName);
+        return ResponseEntity.ok().build();
     }
 }

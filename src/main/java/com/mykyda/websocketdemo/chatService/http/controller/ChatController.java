@@ -1,8 +1,8 @@
-package com.mykyda.websocketdemo.http.controller;
+package com.mykyda.websocketdemo.chatService.http.controller;
 
-import com.mykyda.websocketdemo.dto.*;
-import com.mykyda.websocketdemo.service.ChatService;
-import com.mykyda.websocketdemo.service.HistoryEntryService;
+import com.mykyda.websocketdemo.chatService.dto.*;
+import com.mykyda.websocketdemo.chatService.service.ChatService;
+import com.mykyda.websocketdemo.chatService.service.HistoryEntryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.Objects;
 
 @Controller
 @RequestMapping("/api/chat")
@@ -42,23 +41,20 @@ public class ChatController {
     }
 
     @GetMapping("/get-full-history")
-    public ResponseEntity<List<HistoryEntryDto>> getFullHistory(@RequestParam("chatId") Long chatId, @RequestParam("pageSize") Integer pageSize, @RequestParam("page") Integer page ) {
-        var messages = historyEntryService.getEarlierHistory(chatId,pageSize,page);
-        log.info("full history acquired for chat {}", chatId);
+    public ResponseEntity<List<HistoryEntryDto>> getFullHistory(@RequestParam("chatId") Long chatId, @RequestParam("pageSize") Integer pageSize, @RequestParam("page") Integer page) {
+        var messages = historyEntryService.getEarlierHistory(chatId, pageSize, page);
+        log.info("history with page {} and size {} acquired for chat {}", page, pageSize, chatId);
         return ResponseEntity.ok(messages);
     }
 
     //TODO handle , optimize
     @PostMapping("/create-with-message")
-    public ResponseEntity<ChatDTO> createChat(@RequestBody ChatCreateDTO chatCreateDTO, Principal principal) {
+    public ResponseEntity<ChatDTO> createChat(@RequestBody ChatCreateDTO chatCreateDTO) {
         var chat = chatService.createChat(chatCreateDTO.getCurrentUserId(), chatCreateDTO.getTargetUserId());
-        var historyEntry = historyEntryService.save(new MessageDTO(chat.getId(), chatCreateDTO.getInitialMessage(), chatCreateDTO.getTargetEmail()), principal);
+        var historyEntry = historyEntryService.save(new MessageDTO(chat.getId(), chatCreateDTO.getInitialMessage(), chatCreateDTO.getCurrentUserId(), chatCreateDTO.getTargetEmail()));
         chat.setLastMessage(historyEntry);
         chatService.update(chat);
-        messagingTemplate.convertAndSendToUser(Objects.equals(principal.getName(),
-                        chat.getUser1().getEmail()) ? chat.getUser2().getEmail() : chat.getUser1().getEmail(),
-                "/queue/inbox",
-                historyEntry);
+        messagingTemplate.convertAndSendToUser(chatCreateDTO.getTargetEmail(), "/queue/inbox", historyEntry);
         return ResponseEntity.ok(chat);
     }
 
@@ -76,7 +72,7 @@ public class ChatController {
     //TODO validate, optimize
     @MessageMapping("/i")
     public void chatting(MessageDTO messageDTO, Principal principal) {
-        var message = historyEntryService.save(messageDTO, principal);
+        var message = historyEntryService.save(messageDTO);
         if (message != null) {
 
             log.info("Received message: {} from {} at chat {}", messageDTO.getContent(), principal.getName(), messageDTO.getChatId());
@@ -86,10 +82,7 @@ public class ChatController {
             chatService.update(chat);
 
             messagingTemplate.convertAndSend("/topic/chat/" + messageDTO.getChatId(), message);
-            messagingTemplate.convertAndSendToUser(Objects.equals(principal.getName(),
-                            chat.getUser1().getEmail()) ? chat.getUser2().getEmail() : chat.getUser1().getEmail(),
-                    "/queue/inbox",
-                    message);
+            messagingTemplate.convertAndSendToUser(messageDTO.getTargetEmail(), "/queue/inbox", message);
         }
     }
 

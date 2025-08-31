@@ -1,4 +1,4 @@
-package com.mykyda.websocketdemo.http.controller;
+package com.mykyda.websocketdemo.chatService.http.controller;
 
 
 import lombok.RequiredArgsConstructor;

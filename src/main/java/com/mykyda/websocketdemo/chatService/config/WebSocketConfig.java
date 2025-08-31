@@ -1,4 +1,4 @@
-package com.mykyda.websocketdemo.config;
+package com.mykyda.websocketdemo.chatService.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;

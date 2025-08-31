@@ -1,4 +1,4 @@
-package com.mykyda.websocketdemo.dto;
+package com.mykyda.websocketdemo.chatService.dto;
 
 import lombok.Getter;
 import lombok.Setter;

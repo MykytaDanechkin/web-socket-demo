@@ -1,9 +1,9 @@
-package com.mykyda.websocketdemo.service;
+package com.mykyda.websocketdemo.chatService.service;
 
-import com.mykyda.websocketdemo.database.entity.Chat;
-import com.mykyda.websocketdemo.database.entity.HistoryEntry;
-import com.mykyda.websocketdemo.database.repository.ChatRepository;
-import com.mykyda.websocketdemo.dto.ChatDTO;
+import com.mykyda.websocketdemo.chatService.database.entity.Chat;
+import com.mykyda.websocketdemo.chatService.database.entity.HistoryEntry;
+import com.mykyda.websocketdemo.chatService.database.repository.ChatRepository;
+import com.mykyda.websocketdemo.chatService.dto.ChatDTO;
 import com.mykyda.websocketdemo.security.database.entity.User;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -72,7 +72,7 @@ public class ChatService {
 
     @Transactional
     public List<ChatDTO> getAllForUserId(Long userId) {
-        return chatRepository.findAllByUser1IdAndLastMessageNotNullOrUser2IdAndLastMessageNotNullOrderByLastMessageTimestampDesc(userId, userId).stream().map(ChatDTO::of).toList();
+        return chatRepository.findAllByUser1IdOrUser2IdOrderByLastMessageTimestampDesc(userId, userId).stream().map(ChatDTO::of).toList();
     }
 
     @Transactional
