@@ -7,7 +7,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class MarkSeenRequest {
+public class MarkSeenRequestDTO {
 
     private List<Long> messageIds;
 

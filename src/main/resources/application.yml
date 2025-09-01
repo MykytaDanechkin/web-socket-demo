@@ -17,3 +17,5 @@ spring:
 server:
   address: 0.0.0.0
   port: 8080
+chat:
+  init-history-size: ${LATEST_HISTORY_PAGE_SIZE}

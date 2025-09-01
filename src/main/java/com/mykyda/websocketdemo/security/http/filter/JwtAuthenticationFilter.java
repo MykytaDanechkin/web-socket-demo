@@ -1,7 +1,6 @@
 package com.mykyda.websocketdemo.security.http.filter;
 
 
-import com.mykyda.websocketdemo.security.database.entity.User;
 import com.mykyda.websocketdemo.security.service.JwtService;
 import com.mykyda.websocketdemo.security.service.UserService;
 import jakarta.servlet.FilterChain;
@@ -49,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String username = jwtService.extractUsername(jwtToken);
         try {
-            User user = userService.getByEmail(username);
+            var user = userService.findByEmail(username);
             if (user != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 var authToken = new UsernamePasswordAuthenticationToken((Principal) user::getEmail, null, user.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authToken);

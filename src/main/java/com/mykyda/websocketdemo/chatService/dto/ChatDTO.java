@@ -20,15 +20,15 @@ public class ChatDTO {
 
     UserDTO user2;
 
-    HistoryEntryDto lastMessage;
+    HistoryEntryDTO lastMessage;
 
     public static ChatDTO of(Chat chat) {
         var last = chat.getLastMessage();
-        HistoryEntryDto lastDto;
+        HistoryEntryDTO lastDto;
         if (last == null) {
             lastDto = null;
         } else {
-            lastDto = HistoryEntryDto.of(last);
+            lastDto = HistoryEntryDTO.of(last);
         }
         return new ChatDTO(chat.getId(), UserDTO.of(chat.getUser1()), UserDTO.of(chat.getUser2()), lastDto);
     }

@@ -4,13 +4,17 @@ import com.mykyda.websocketdemo.chatService.database.entity.Chat;
 import com.mykyda.websocketdemo.chatService.database.entity.HistoryEntry;
 import com.mykyda.websocketdemo.chatService.database.entity.MessageStatus;
 import com.mykyda.websocketdemo.chatService.database.repository.HistoryEntryRepository;
-import com.mykyda.websocketdemo.chatService.dto.HistoryEntryDto;
+import com.mykyda.websocketdemo.chatService.dto.HistoryEntryDTO;
 import com.mykyda.websocketdemo.chatService.dto.MessageDTO;
+import com.mykyda.websocketdemo.chatService.exception.DatabaseException;
+import com.mykyda.websocketdemo.chatService.exception.NotFoundException;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -24,54 +28,72 @@ public class HistoryEntryService {
 
     private final HistoryEntryRepository historyEntryRepository;
 
-    private final ChatService chatService;
 
     private final EntityManager entityManager;
 
+    @Value("${chat.init-history-size:20}")
+    private Integer LATEST_HISTORY_SIZE;
+
     @Transactional
-    public HistoryEntryDto save(MessageDTO messageDTO) {
-        var chat = chatService.getById(messageDTO.getChatId());
-        if (chat == null) {
-            log.warn("Chat id not found: {}", messageDTO.getChatId());
-            return null;
-        } else {
-            var historyEntry = HistoryEntry.builder()
-                    .chat(entityManager.find(Chat.class, chat.getId()))
-                    .content(StringEscapeUtils.escapeHtml4(messageDTO.getContent()))
-                    .sendersId(messageDTO.getSendersId())
-                    .build();
-            log.info("Saving history entry: {}", historyEntry);
+    public HistoryEntryDTO save(MessageDTO messageDTO) {
+        var historyEntry = HistoryEntry.builder()
+                .chat(entityManager.find(Chat.class, messageDTO.getChatId()))
+                .content(StringEscapeUtils.escapeHtml4(messageDTO.getContent()))
+                .sendersId(messageDTO.getSendersId())
+                .build();
+        try {
             var saved = historyEntryRepository.save(historyEntry);
-            return HistoryEntryDto.of(saved);
+            log.info("Saving history entry: {}", historyEntry);
+            return HistoryEntryDTO.of(saved);
+        } catch (DataAccessException e) {
+            throw new DatabaseException(e.getMessage());
         }
     }
 
-    //TODO handle errors
     @Transactional
-    public List<HistoryEntryDto> getLatestHistory(Long chatId) {
-        return Stream.concat(
-                        historyEntryRepository.findAllByChatIdAndStatusOrderByTimestampDesc(chatId,
-                                        MessageStatus.UNSEEN).
-                                stream().map(HistoryEntryDto::of),
-                        historyEntryRepository.findAllByChatIdAndStatusNotOrderByTimestampDesc(chatId,
-                                        MessageStatus.UNSEEN,
-                                        PageRequest.of(0, 20))
-                                .stream().map(HistoryEntryDto::of))
-                .toList();
+    public List<HistoryEntryDTO> getLatestHistory(Long chatId) {
+        try {
+            var latestHistoryList = Stream.concat(
+                            historyEntryRepository.findAllByChatIdAndStatusOrderByTimestampDesc(chatId, MessageStatus.UNSEEN)
+                                    .stream(),
+                            historyEntryRepository.findAllByChatIdAndStatusNotOrderByTimestampDesc(chatId, MessageStatus.UNSEEN, PageRequest.of(0, LATEST_HISTORY_SIZE))
+                                    .stream())
+                    .map(HistoryEntryDTO::of)
+                    .toList();
+            log.info("latest history acquired for chat {}", chatId);
+            return latestHistoryList;
+        } catch (DataAccessException exception) {
+            throw new DatabaseException(exception.getMessage());
+        }
     }
 
-    //TOdo handle
     @Transactional
-    public List<HistoryEntryDto> getEarlierHistory(Long chatId, Integer pageSize,  Integer page) {
-        return historyEntryRepository.findAllByChatIdOrderByTimestampDesc(chatId,PageRequest.of(page,pageSize))
-                .stream()
-                .map(HistoryEntryDto::of)
-                .toList();
+    public List<HistoryEntryDTO> getEarlierHistory(Long chatId, Integer pageSize, Integer page) {
+        try {
+            var earlierHistoryList = historyEntryRepository.findAllByChatIdOrderByTimestampDesc(chatId, PageRequest.of(page, pageSize))
+                    .stream()
+                    .map(HistoryEntryDTO::of)
+                    .toList();
+            log.info("history with page {} and size {} acquired for chat {}", page, pageSize, chatId);
+            return earlierHistoryList;
+        } catch (DataAccessException exception) {
+            throw new DatabaseException(exception.getMessage());
+        }
     }
 
-    //TODO handle errors
     @Transactional
     public void markAsSeen(List<Long> messageIds) {
-        historyEntryRepository.updateStatusByIds(messageIds, MessageStatus.SEEN);
+        try {
+            var messagesToChange = historyEntryRepository.findAllById(messageIds);
+            if (!messagesToChange.isEmpty()) {
+                historyEntryRepository.updateStatusByIds(messageIds, MessageStatus.SEEN);
+                log.info("mark seen at ids {}", messageIds);
+            } else {
+                log.warn("mark seen at ids {} failed", messageIds);
+                throw new NotFoundException("mark seen at ids " + messageIds);
+            }
+        } catch (DataAccessException exception) {
+            throw new DatabaseException(exception.getMessage());
+        }
     }
 }

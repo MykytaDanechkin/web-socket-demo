@@ -13,7 +13,7 @@ import java.sql.Timestamp;
 @Setter
 @ToString
 @Builder
-public class HistoryEntryDto {
+public class HistoryEntryDTO {
 
     Long id;
 
@@ -27,8 +27,8 @@ public class HistoryEntryDto {
 
     MessageStatus status;
 
-    public static HistoryEntryDto of(HistoryEntry historyEntry) {
-        return (historyEntry == null) ? null : new HistoryEntryDto(
+    public static HistoryEntryDTO of(HistoryEntry historyEntry) {
+        return (historyEntry == null) ? null : new HistoryEntryDTO(
                 historyEntry.getId(),
                 historyEntry.getContent(),
                 historyEntry.getChat().getId(),

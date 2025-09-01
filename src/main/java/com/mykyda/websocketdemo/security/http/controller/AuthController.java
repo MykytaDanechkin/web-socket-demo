@@ -1,11 +1,10 @@
 package com.mykyda.websocketdemo.security.http.controller;
 
-import com.mykyda.websocketdemo.security.dto.LoginDto;
-import com.mykyda.websocketdemo.security.dto.RegistrationDto;
+import com.mykyda.websocketdemo.security.dto.LoginDTO;
+import com.mykyda.websocketdemo.security.dto.RegistrationDTO;
 import com.mykyda.websocketdemo.security.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +12,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.Collections;
+import java.util.List;
 
 @Controller
 @RequestMapping("auth")
@@ -28,22 +27,14 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(@ModelAttribute LoginDto ld, Model model, HttpServletResponse response) {
-        var res = authService.login(ld);
-
-        switch (res.getStatusCode().value()) {
-            case 401, 404 -> {
-                model.addAttribute("errors", "incorrect username or password");
-                return "login";
-            }
-            case 200 -> {
-                response.addCookie(res.getBody());
-                return "redirect:/";
-            }
-            default -> {
-                model.addAttribute("errors", "Unexpected error");
-                return "login";
-            }
+    public String login(@ModelAttribute LoginDTO ld, Model model, HttpServletResponse response) {
+        try {
+            var cookie = authService.login(ld);
+            response.addCookie(cookie);
+            return "redirect:/";
+        } catch (Exception ex) {
+            model.addAttribute("errors", List.of(ex.getMessage()));
+            return "login";
         }
     }
 
@@ -53,12 +44,13 @@ public class AuthController {
     }
 
     @PostMapping("/registration")
-    public String register(@ModelAttribute RegistrationDto rd, Model model) {
-        var res = authService.register(rd);
-        if (res.getStatusCode() != HttpStatus.CREATED) {
-            model.addAttribute("errors", Collections.singletonList(res.getBody()));
+    public String register(@ModelAttribute RegistrationDTO rd, Model model) {
+        try {
+            authService.register(rd);
+            return "redirect:/auth/login";
+        } catch (Exception ex) {
+            model.addAttribute("errors", List.of(ex.getMessage()));
             return "registration";
         }
-        return "redirect:/auth/login";
     }
 }

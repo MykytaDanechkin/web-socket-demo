@@ -30,17 +30,17 @@ public class GlobalModelAdvice {
 
     @ModelAttribute("userId")
     public Long userId(Authentication authentication) {
-        return (authentication != null) ? userService.getByEmail(authentication.getName()).getId() : null;
+        return (authentication != null) ? userService.findByEmailUnlogged(authentication.getName()).getId() : null;
     }
 
     @ModelAttribute("userTag")
     public String userTag(Authentication authentication) {
-        return (authentication != null) ? userService.getByEmail(authentication.getName()).getTag() : null;
+        return (authentication != null) ? userService.findByEmailUnlogged(authentication.getName()).getTag() : null;
     }
 
     @ModelAttribute("userDisplayName")
     public String userDisplayName(Authentication authentication) {
-        return (authentication != null) ? userService.getByEmail(authentication.getName()).getDisplayName() : null;
+        return (authentication != null) ? userService.findByEmailUnlogged(authentication.getName()).getDisplayName() : null;
     }
 
     @ModelAttribute("chats")

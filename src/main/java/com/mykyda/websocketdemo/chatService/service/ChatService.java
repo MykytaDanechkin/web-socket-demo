@@ -4,11 +4,14 @@ import com.mykyda.websocketdemo.chatService.database.entity.Chat;
 import com.mykyda.websocketdemo.chatService.database.entity.HistoryEntry;
 import com.mykyda.websocketdemo.chatService.database.repository.ChatRepository;
 import com.mykyda.websocketdemo.chatService.dto.ChatDTO;
+import com.mykyda.websocketdemo.chatService.exception.DatabaseException;
+import com.mykyda.websocketdemo.chatService.exception.NotFoundException;
 import com.mykyda.websocketdemo.security.database.entity.User;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,62 +25,55 @@ public class ChatService {
 
     private final EntityManager entityManager;
 
-//    @Transactional
-//    public ResponseEntity<Long> getChatId(Principal principal, Long user2Id) {
-//        var user1 = userService.getByEmail(principal.getName());
-//        var firstId = Math.min(user1.getId(), user2Id);
-//        var lastId = Math.max(user1.getId(), user2Id);
-//        var chat = chatRepository.findByUser1IdAndUser2Id(firstId, lastId).orElse(null);
-//        if (chat == null) {
-//            log.warn("Chat not found with ids {} {}", user1.getId(), user2Id);
-//            var newChat = createChat(user1.getId(), user2Id);
-//            if (newChat == null) {
-//                return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-//            } else {
-//                return new ResponseEntity<>(newChat.getId(), HttpStatus.OK);
-//            }
-//
-//        } else {
-//            log.info("Chat found with ids {} {}", user1.getId(), user2Id);
-//            return new ResponseEntity<>(chat.getId(), HttpStatus.OK);
-//        }
-//    }
-
     @Transactional
     public ChatDTO getById(Long id) {
-        var chat = chatRepository.findById(id).orElse(null);
-        if (chat == null) {
-            return null;
-        } else {
-            return ChatDTO.of(chat);
+        try {
+            var chat = chatRepository.findById(id).map(ChatDTO::of).orElseThrow(() -> {
+                log.warn("chat with id {} not found", id);
+                return new NotFoundException("chat with id" + id + " not found");
+            });
+            log.info("chat with id {} found", chat.getId());
+            return chat;
+        } catch (DataAccessException e) {
+            throw new DatabaseException(e.getMessage());
         }
     }
 
-//    private Chat createChat(Long user1Id, Long user2Id) {
-//        var chatToSave = Chat.of(user1Id, user2Id);
-//        try {
-//            var savedChat = chatRepository.save(chatToSave);
-//            log.info("Created chat: {}", chatToSave);
-//            return savedChat;
-//        } catch (Exception e) {
-//            log.error("Unexpected error in Chat save with:{}", e.getMessage());
-//            return null;
-//        }
-//    }
-
     @Transactional
-    public void update(ChatDTO chatDTO) {
-        chatRepository.updateLastMessage(chatDTO.getId(),entityManager.getReference(HistoryEntry.class, chatDTO.getLastMessage().getId()));
+    public void updateLastMessage(ChatDTO chatDTO) {
+        try {
+            chatRepository.findById(chatDTO.getId()).orElseThrow(()-> {
+                log.warn("chat with id {} not found", chatDTO.getId());
+                return new NotFoundException("chat with id" + chatDTO.getId() + " not found");
+            });
+            chatRepository.updateLastMessage(chatDTO.getId(), entityManager.getReference(HistoryEntry.class, chatDTO.getLastMessage().getId()));
+            log.info("chat with id {} last message updated ", chatDTO.getId());
+        } catch (DataAccessException e) {
+            throw new DatabaseException(e.getMessage());
+        }
     }
 
     @Transactional
     public List<ChatDTO> getAllForUserId(Long userId) {
-        return chatRepository.findAllByUser1IdOrUser2IdOrderByLastMessageTimestampDesc(userId, userId).stream().map(ChatDTO::of).toList();
+        try {
+            var availableChats = chatRepository.findAllByUser1IdOrUser2IdOrderByLastMessageTimestampDesc(userId, userId).stream().map(ChatDTO::of).toList();
+            log.info("found available chats for user {}", userId);
+            return availableChats;
+        } catch (DataAccessException e) {
+            throw new DatabaseException(e.getMessage());
+        }
     }
 
     @Transactional
-    public ChatDTO createChat(Long currentUserId, Long targetUserId) {
+    public ChatDTO createAndSaveChat(Long currentUserId, Long targetUserId) {
         var chat = Chat.of(entityManager.getReference(User.class, currentUserId), entityManager.getReference(User.class, targetUserId));
-        return ChatDTO.of(chatRepository.save(chat));
+        try {
+            var savedChat = chatRepository.save(chat);
+            log.info("chat with id {} saved", savedChat.getId());
+            return ChatDTO.of(savedChat);
+        }  catch (DataAccessException e) {
+            throw new DatabaseException(e.getMessage());
+        }
+
     }
 }
